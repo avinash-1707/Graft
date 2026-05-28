@@ -1,0 +1,19 @@
+{
+  "name": "@graft/gateway",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p .",
+    "dev": "tsc -p . --watch --preserveWatchOutput",
+    "check-types": "tsc -p . --noEmit",
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@graft/eslint-config": "workspace:*",
+    "@graft/tsconfig": "workspace:*",
+    "typescript": "5.7.3"
+  }
+}

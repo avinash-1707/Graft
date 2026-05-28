@@ -1,0 +1,27 @@
+{
+  "name": "graft",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Graft — multi-tenant AI-first customer support platform.",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\""
+  },
+  "devDependencies": {
+    "@graft/eslint-config": "workspace:*",
+    "@graft/tsconfig": "workspace:*",
+    "@types/node": "22.10.5",
+    "eslint": "9.18.0",
+    "prettier": "3.4.2",
+    "turbo": "2.9.3",
+    "typescript": "5.7.3"
+  }
+}
