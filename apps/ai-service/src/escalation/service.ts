@@ -1,6 +1,8 @@
 import { transitionToEscalationPending, type Database } from '@graft/db';
 import type { Metrics } from '@graft/observability';
 import { ConversationState, type EscalationTrigger } from '@graft/shared';
+import type { EventBus } from '../realtime/event-bus.js';
+import { escalationStateChangedEvent } from '../realtime/events.js';
 
 export interface EscalateInput {
   organizationId: string;
@@ -15,18 +17,20 @@ export interface EscalateResult {
 
 /**
  * Applies an escalation: the atomic AI_ACTIVE → ESCALATION_PENDING compare-and-set
- * (invariant 2) plus the state-transition metric. Used by BOTH the request handler
- * (inline triggers: weak grounding, provider failure, model-invoked) and the
- * analysis worker (classifier triggers: negative sentiment, 3rd human request) —
- * the compare-and-set guarantees only one writer wins, so concurrent escalations or
- * an agent takeover never double-transition. The caller emits the live
- * `state_changed` SSE event when it holds the customer's connection (B-hybrid); the
- * transition itself is durable regardless.
+ * (invariant 2), the state-transition metric, and the cross-instance `state_changed`
+ * publish on the realtime bus. Used by BOTH the request handler (inline triggers:
+ * weak grounding, provider failure, model-invoked) and the analysis worker
+ * (classifier triggers) — the compare-and-set guarantees only one writer wins, so
+ * publishing only on a real transition means exactly one delivery per escalation.
+ * The bus delivers the event to whichever instance holds the customer's SSE (the
+ * worker is a separate process), closing unit 17's B-hybrid cross-instance gap; the
+ * transition itself is durable regardless of whether a connection is currently held.
  */
 export class EscalationService {
   constructor(
     private readonly db: Database,
     private readonly metrics: Metrics,
+    private readonly bus: EventBus,
   ) {}
 
   async escalate(input: EscalateInput): Promise<EscalateResult> {
@@ -43,6 +47,10 @@ export class EscalationService {
       to: ConversationState.ESCALATION_PENDING,
       trigger: input.trigger,
     });
+    await this.bus.publishEvent(
+      input.conversationId,
+      escalationStateChangedEvent(input.conversationId, input.trigger),
+    );
     return { transitioned: true };
   }
 }

@@ -27,7 +27,6 @@ import {
   type AiAnalysisResult,
   type AiInferenceStatus,
   type Conversation,
-  type ConversationId,
   type EscalationTrigger as EscalationTriggerType,
   type ServerEvent,
 } from '@graft/shared';
@@ -37,20 +36,6 @@ import type { ConversationService } from '../conversation/service.js';
 import type { EscalationService } from '../escalation/service.js';
 import type { AnalysisQueue } from '../queue/analysis-queue.js';
 
-/** Emits the live ESCALATION_PENDING `state_changed` event on the customer's SSE. */
-function emitStateChanged(
-  emit: (event: ServerEvent) => void,
-  conversationId: ConversationId,
-  trigger: EscalationTriggerType,
-): void {
-  emit({
-    type: 'state_changed',
-    conversationId,
-    state: ConversationState.ESCALATION_PENDING,
-    trigger,
-  });
-}
-
 export interface StreamTurnParams {
   organizationId: string;
   /** Session UUID, already validated to belong to the org by the route. */
@@ -59,7 +44,14 @@ export interface StreamTurnParams {
   clientNonce: string;
   /** Cancellation: aborts when the customer disconnects (invariant 12). */
   signal: AbortSignal;
+  /** Direct local SSE write for `ai_token` / `message_appended` (not `state_changed`). */
   emit: (event: ServerEvent) => void;
+  /**
+   * Called once the conversation is resolved, before streaming. The route uses it to
+   * register the SSE connection in the realtime registry so bus-published events
+   * (escalation `state_changed`, takeover abort) reach this connection.
+   */
+  onConversation?: (conversation: Conversation) => void;
   log: FastifyBaseLogger;
 }
 
@@ -110,9 +102,11 @@ export class AnswerService {
   }
 
   async streamTurn(params: StreamTurnParams): Promise<void> {
-    const { organizationId, sessionId, content, clientNonce, signal, emit, log } = params;
+    const { organizationId, sessionId, content, clientNonce, signal, emit, onConversation, log } =
+      params;
 
     const conversation = await this.conversations.getOrCreateConversation(organizationId, sessionId);
+    onConversation?.(conversation);
 
     // History BEFORE appending the new turn. SYSTEM events are never placed in the
     // LLM context (invariant 8); the prompt appends the customer message itself.
@@ -160,18 +154,6 @@ export class AnswerService {
     });
   }
 
-  /** Performs an inline escalation transition and the live `state_changed` emit. */
-  private async escalateAndEmit(
-    organizationId: string,
-    conversationId: ConversationId,
-    trigger: EscalationTriggerType,
-    emit: (event: ServerEvent) => void,
-  ): Promise<{ transitioned: boolean }> {
-    const result = await this.escalation.escalate({ organizationId, conversationId, trigger });
-    if (result.transitioned) emitStateChanged(emit, conversationId, trigger);
-    return result;
-  }
-
   private async generateAnswer(args: {
     organizationId: string;
     conversation: Conversation;
@@ -197,12 +179,11 @@ export class AnswerService {
     } catch (err) {
       log.error({ err, organizationId, conversationId: conversation.id }, 'retrieval failed');
       if (cfg.providerFailureEnabled) {
-        await this.escalateAndEmit(
+        await this.escalation.escalate({
           organizationId,
-          conversation.id,
-          EscalationTrigger.PROVIDER_FAILURE,
-          emit,
-        );
+          conversationId: conversation.id,
+          trigger: EscalationTrigger.PROVIDER_FAILURE,
+        });
       }
       return;
     }
@@ -211,12 +192,11 @@ export class AnswerService {
 
     // Weak grounding is the primary "AI can't answer" signal: escalate, no LLM answer.
     if (!grounding.grounded && cfg.weakGroundingEnabled) {
-      await this.escalateAndEmit(
+      await this.escalation.escalate({
         organizationId,
-        conversation.id,
-        EscalationTrigger.WEAK_GROUNDING,
-        emit,
-      );
+        conversationId: conversation.id,
+        trigger: EscalationTrigger.WEAK_GROUNDING,
+      });
       return;
     }
     // Trigger disabled → fall back to a grounded-but-empty decline (unit-16 behavior).
@@ -294,23 +274,23 @@ export class AnswerService {
         persistedMessageId = message.id;
       }
 
-      // Inline model-invoked escalation (handler owns this transition).
+      // Inline model-invoked escalation. EscalationService transitions + publishes the
+      // `state_changed` on the realtime bus, which delivers to this SSE locally.
       let trigger: EscalationTriggerType | null = null;
       if (modelInvoked && cfg.modelInvokedEnabled) {
-        const { transitioned } = await this.escalateAndEmit(
+        const { transitioned } = await this.escalation.escalate({
           organizationId,
-          conversation.id,
-          EscalationTrigger.MODEL_INVOKED,
-          emit,
-        );
+          conversationId: conversation.id,
+          trigger: EscalationTrigger.MODEL_INVOKED,
+        });
         if (transitioned) trigger = EscalationTrigger.MODEL_INVOKED;
       }
 
-      // Classifier-driven escalation: the worker owns the durable transition; we do a
-      // best-effort live emit since we still hold the SSE. Skip if already escalated.
+      // Classifier-driven escalation: the worker already transitioned AND published the
+      // `state_changed` (delivered to this SSE via the bus). We await the result only to
+      // attribute the trigger on the AiInference row — no emit here (avoids a double).
       const analysis = await analysisPromise;
       if (trigger === null && analysis?.escalated && analysis.trigger) {
-        emitStateChanged(emit, conversation.id, analysis.trigger);
         trigger = analysis.trigger;
       }
 
@@ -342,12 +322,11 @@ export class AnswerService {
       } else {
         log.error({ err, organizationId, conversationId: conversation.id }, 'generation failed');
         if (cfg.providerFailureEnabled) {
-          const { transitioned } = await this.escalateAndEmit(
+          const { transitioned } = await this.escalation.escalate({
             organizationId,
-            conversation.id,
-            EscalationTrigger.PROVIDER_FAILURE,
-            emit,
-          );
+            conversationId: conversation.id,
+            trigger: EscalationTrigger.PROVIDER_FAILURE,
+          });
           if (transitioned) trigger = EscalationTrigger.PROVIDER_FAILURE;
         }
       }

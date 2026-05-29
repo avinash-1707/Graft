@@ -6,6 +6,7 @@ import { Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import type { AiServiceEnv } from '../env.js';
 import { EscalationService } from '../escalation/service.js';
+import { createEventBus } from '../realtime/event-bus.js';
 import { SERVICE_NAME } from '../telemetry.js';
 import { processAnalysisJob } from './analysis-processor.js';
 
@@ -31,7 +32,10 @@ export async function startWorker({ env, tracing }: StartWorkerOptions): Promise
     keyBase64: env.AI_KEY_ENCRYPTION_KEY,
     keyId: env.AI_KEY_ENCRYPTION_KEY_ID,
   });
-  const escalation = new EscalationService(db, metrics);
+  // Publish-only bus: the worker holds no SSE, so it never subscribes — it just
+  // publishes the escalation `state_changed` for the HTTP instance to deliver.
+  const bus = createEventBus(env.REDIS_URL, logger);
+  const escalation = new EscalationService(db, metrics, bus);
   const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
 
   const worker = new Worker<AiAnalysisJob, AiAnalysisResult, string>(
@@ -66,6 +70,7 @@ export async function startWorker({ env, tracing }: StartWorkerOptions): Promise
       try {
         await worker.close();
         connection.disconnect();
+        await bus.close();
         await closeDb();
         await tracing.shutdown();
         logger.info('worker shutdown complete');

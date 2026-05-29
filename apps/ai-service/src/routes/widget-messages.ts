@@ -2,11 +2,13 @@ import { findSessionForOrg, touchSession, type Database } from '@graft/db';
 import { SESSION_HEADER, sessionIdSchema, widgetMessageBodySchema } from '@graft/shared';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import type { AnswerService } from '../ai/answer-service.js';
+import type { ConnectionRegistry, SseConnection } from '../realtime/connection-registry.js';
 import { SSE_HEADERS, writeServerEvent } from '../sse/stream.js';
 
 interface WidgetMessageRouteOptions {
   db: Database;
   answerService: AnswerService;
+  registry: ConnectionRegistry;
 }
 
 function headerValue(request: FastifyRequest, name: string): string | undefined {
@@ -29,7 +31,7 @@ export const widgetMessageRoutes: FastifyPluginAsync<WidgetMessageRouteOptions> 
   app,
   opts,
 ) => {
-  const { db, answerService } = opts;
+  const { db, answerService, registry } = opts;
 
   app.post('/widget/messages', { preHandler: [app.validateWidget] }, async (request, reply) => {
     const organizationId = request.widgetOrg!.organizationId;
@@ -69,6 +71,15 @@ export const widgetMessageRoutes: FastifyPluginAsync<WidgetMessageRouteOptions> 
     const onClose = (): void => controller.abort();
     request.raw.on('close', onClose);
 
+    // Registered in the realtime registry once the conversation is known, so a
+    // bus-published escalation `state_changed` or a cross-instance takeover abort
+    // reaches this SSE / aborts this generation regardless of origin process.
+    const connection: SseConnection = {
+      write: (event) => writeServerEvent(res, event),
+      abort: () => controller.abort(),
+    };
+    let registeredConversationId: string | undefined;
+
     try {
       await answerService.streamTurn({
         organizationId,
@@ -77,11 +88,16 @@ export const widgetMessageRoutes: FastifyPluginAsync<WidgetMessageRouteOptions> 
         clientNonce,
         signal: controller.signal,
         emit: (event) => writeServerEvent(res, event),
+        onConversation: (conversation) => {
+          registry.register(conversation.id, connection);
+          registeredConversationId = conversation.id;
+        },
         log: request.log,
       });
     } catch (err) {
       request.log.error({ err }, 'widget message turn failed');
     } finally {
+      if (registeredConversationId) registry.unregister(registeredConversationId, connection);
       request.raw.removeListener('close', onClose);
       if (!res.writableEnded) res.end();
     }

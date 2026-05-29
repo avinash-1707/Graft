@@ -8,6 +8,7 @@ import Fastify, {
 } from 'fastify';
 import type { AnswerService } from './ai/answer-service.js';
 import type { ConversationService } from './conversation/service.js';
+import type { ConnectionRegistry } from './realtime/connection-registry.js';
 import metricsPlugin from './plugins/metrics.js';
 import { healthRoutes } from './routes/health.js';
 import { metricsRoutes } from './routes/metrics.js';
@@ -26,6 +27,7 @@ export interface BuildAppOptions {
   db: Database;
   conversations: ConversationService;
   answerService: AnswerService;
+  registry: ConnectionRegistry;
   jwtConfig: JwtVerifyConfig;
   /** Readiness gate; flips to false during graceful shutdown. */
   isReady: () => boolean;
@@ -38,7 +40,7 @@ export interface BuildAppOptions {
  * signal handling; the caller owns the lifecycle.
  */
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
-  const { logger, metrics, db, conversations, answerService, jwtConfig, isReady } = opts;
+  const { logger, metrics, db, conversations, answerService, registry, jwtConfig, isReady } = opts;
 
   const loggerInstance: FastifyBaseLogger = logger;
   const app = Fastify({ loggerInstance, trustProxy: true });
@@ -71,7 +73,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
 
   await app.register(healthRoutes, { isReady });
   await app.register(metricsRoutes, { metrics });
-  await app.register(widgetMessageRoutes, { db, answerService });
+  await app.register(widgetMessageRoutes, { db, answerService, registry });
 
   return app;
 }

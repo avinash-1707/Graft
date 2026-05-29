@@ -8,6 +8,8 @@ import { ConversationService } from './conversation/service.js';
 import type { AiServiceEnv } from './env.js';
 import { EscalationService } from './escalation/service.js';
 import { createAnalysisQueue } from './queue/analysis-queue.js';
+import { ConnectionRegistry } from './realtime/connection-registry.js';
+import { createEventBus } from './realtime/event-bus.js';
 import { SERVICE_NAME } from './telemetry.js';
 
 export interface StartOptions {
@@ -32,7 +34,9 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     keyBase64: env.AI_KEY_ENCRYPTION_KEY,
     keyId: env.AI_KEY_ENCRYPTION_KEY_ID,
   });
-  const escalation = new EscalationService(db, metrics);
+  const registry = new ConnectionRegistry();
+  const bus = createEventBus(env.REDIS_URL, logger);
+  const escalation = new EscalationService(db, metrics, bus);
   const analysisQueue = createAnalysisQueue(env);
   const answerService = new AnswerService({
     db,
@@ -45,6 +49,10 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
   });
   const jwtConfig: JwtVerifyConfig = { secret: env.JWT_SECRET, issuer: env.JWT_ISSUER };
 
+  // Subscribe BEFORE listening so an escalation published the instant a turn starts
+  // is delivered to the SSE this instance holds (invariant 9).
+  await bus.subscribe(registry);
+
   let ready = true;
   const app = await buildApp({
     logger,
@@ -52,6 +60,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     db,
     conversations,
     answerService,
+    registry,
     jwtConfig,
     isReady: () => ready,
   });
@@ -75,6 +84,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
       try {
         await app.close();
         await analysisQueue.close();
+        await bus.close();
         await closeDb();
         await tracing.shutdown();
         logger.info('shutdown complete');
