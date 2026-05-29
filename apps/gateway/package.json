@@ -7,13 +7,25 @@
   "scripts": {
     "build": "tsc -p .",
     "dev": "tsc -p . --watch --preserveWatchOutput",
+    "start": "node dist/index.js",
     "check-types": "tsc -p . --noEmit",
     "lint": "eslint .",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
+  "dependencies": {
+    "@fastify/rate-limit": "10.3.0",
+    "@graft/observability": "workspace:*",
+    "@graft/shared": "workspace:*",
+    "@opentelemetry/instrumentation-fastify": "0.57.0",
+    "@opentelemetry/instrumentation-http": "0.218.0",
+    "fastify": "5.8.5",
+    "fastify-plugin": "5.1.0",
+    "zod": "4.4.3"
+  },
   "devDependencies": {
     "@graft/eslint-config": "workspace:*",
     "@graft/tsconfig": "workspace:*",
+    "@types/node": "22.10.5",
     "typescript": "5.7.3"
   }
 }
