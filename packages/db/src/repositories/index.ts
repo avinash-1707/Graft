@@ -10,3 +10,5 @@ export * from './kb-chunks.js';
 export * from './widget-configs.js';
 export * from './escalation-configs.js';
 export * from './kb-documents.js';
+export * from './conversations.js';
+export * from './messages.js';
