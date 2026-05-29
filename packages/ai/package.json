@@ -22,5 +22,13 @@
     "@graft/eslint-config": "workspace:*",
     "@graft/tsconfig": "workspace:*",
     "typescript": "5.7.3"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "3.0.81",
+    "@ai-sdk/openai": "3.0.66",
+    "@graft/rag": "workspace:*",
+    "@graft/shared": "workspace:*",
+    "ai": "6.0.193",
+    "zod": "4.4.3"
   }
 }
