@@ -4,6 +4,7 @@ import { buildApp } from './app.js';
 import { createMailer } from './auth/mailer.js';
 import type { JwtConfig } from './auth/jwt.js';
 import { AuthService } from './auth/service.js';
+import { createEncryptor } from './crypto/encryption.js';
 import type { GatewayEnv } from './env.js';
 import { SERVICE_NAME } from './telemetry.js';
 
@@ -34,6 +35,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     issuer: env.JWT_ISSUER,
     accessTtlSeconds: env.JWT_ACCESS_TTL_SECONDS,
   };
+  const encryptor = createEncryptor(env);
 
   let ready = true;
   const app = await buildApp({
@@ -43,6 +45,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     db,
     authService,
     jwtConfig,
+    encryptor,
     isReady: () => ready,
   });
 

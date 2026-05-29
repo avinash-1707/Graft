@@ -38,6 +38,18 @@ export const gatewayEnvSchema = observabilityEnvSchema.extend({
   OTP_TTL_MS: z.coerce.number().int().positive().default(600_000),
   OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
 
+  // --- Tenant AI provider key encryption (app-level AES-256-GCM envelope) ---
+  /** Active master key, base64-encoded; must decode to 32 bytes (AES-256). */
+  AI_KEY_ENCRYPTION_KEY: z.string().refine((v) => {
+    try {
+      return Buffer.from(v, 'base64').length === 32;
+    } catch {
+      return false;
+    }
+  }, 'must be a base64-encoded 32-byte key'),
+  /** Label recorded on each encrypted row; identifies the key for rotation. */
+  AI_KEY_ENCRYPTION_KEY_ID: z.string().min(1).default('v1'),
+
   // --- Public widget endpoints ---
   /** Max widget requests per window, keyed per (embed token, session). */
   WIDGET_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(30),

@@ -18,5 +18,6 @@ export * from './contracts/ai-inference.js';
 export * from './contracts/auth.js';
 export * from './contracts/widget.js';
 export * from './contracts/organization.js';
+export * from './contracts/ai-credential.js';
 
 export * from './constants.js';
