@@ -165,3 +165,65 @@ export async function claimConversation(
     escalationTrigger: row.escalation_trigger,
   };
 }
+
+/**
+ * Atomic AGENT_ASSIGNED → HUMAN_ACTIVE transition (unit 20): fires on the assigned
+ * agent's first message, only while still AGENT_ASSIGNED and assigned to that agent.
+ * The compare-and-set makes concurrent first messages flip the state exactly once
+ * (the loser gets undefined and skips the duplicate switch signal). Tenant-scoped.
+ */
+export async function transitionToHumanActive(
+  db: Database,
+  conversationId: string,
+  organizationId: string,
+  agentId: string,
+): Promise<ConversationRow | undefined> {
+  const [row] = await db
+    .update(conversations)
+    .set({ state: 'HUMAN_ACTIVE', updatedAt: new Date() })
+    .where(
+      and(
+        eq(conversations.id, conversationId),
+        eq(conversations.organizationId, organizationId),
+        eq(conversations.state, 'AGENT_ASSIGNED'),
+        eq(conversations.assignedAgentId, agentId),
+      ),
+    )
+    .returning();
+  return row;
+}
+
+/**
+ * Atomic handback HUMAN_ACTIVE → AI_ACTIVE (unit 20): the assigned agent returns the
+ * conversation to the AI. Only succeeds while still HUMAN_ACTIVE and assigned to that
+ * agent. Clears the assignment and the escalation trigger and resets the running
+ * human-request count, so the AI starts a clean turn and the THIRD_HUMAN_REQUEST
+ * counter restarts. Returns undefined when it was no longer the agent's to hand back.
+ * Tenant-scoped.
+ */
+export async function handbackToAi(
+  db: Database,
+  conversationId: string,
+  organizationId: string,
+  agentId: string,
+): Promise<ConversationRow | undefined> {
+  const [row] = await db
+    .update(conversations)
+    .set({
+      state: 'AI_ACTIVE',
+      assignedAgentId: null,
+      escalationTrigger: null,
+      humanRequestCount: 0,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(conversations.id, conversationId),
+        eq(conversations.organizationId, organizationId),
+        eq(conversations.state, 'HUMAN_ACTIVE'),
+        eq(conversations.assignedAgentId, agentId),
+      ),
+    )
+    .returning();
+  return row;
+}

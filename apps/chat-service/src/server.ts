@@ -5,6 +5,7 @@ import { Redis } from 'ioredis';
 import { buildApp } from './app.js';
 import { ClaimService } from './claim/service.js';
 import type { ChatServiceEnv } from './env.js';
+import { MessagingService } from './messaging/service.js';
 import { createAiAbortPublisher } from './realtime/ai-bus.js';
 import { createSocketServer } from './realtime/io.js';
 import { SERVICE_NAME } from './telemetry.js';
@@ -45,6 +46,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
   // ai-service's realtime bus (a separate channel; independent of the adapter's own).
   const abortPublisher = createAiAbortPublisher(pub);
   const claimService = new ClaimService({ db, metrics, abortPublisher, logger });
+  const messagingService = new MessagingService({ db, metrics, logger });
 
   const io = createSocketServer({
     httpServer: app.server,
@@ -56,6 +58,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     pub,
     sub,
     claimService,
+    messagingService,
   });
 
   await app.listen({ host: env.HOST, port: env.PORT });
