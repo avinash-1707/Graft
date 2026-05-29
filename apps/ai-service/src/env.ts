@@ -3,9 +3,9 @@ import { z } from 'zod';
 
 /**
  * AI-service runtime configuration. Composes the shared observability env with
- * networking and database settings. Parsed once at boot; a missing/malformed
- * required var fails fast. (Provider keyring decryption, Redis/BullMQ, and JWT
- * verification arrive with the SSE/escalation units.)
+ * networking, database, JWT verification, and tenant AI-key decryption settings.
+ * Parsed once at boot; a missing/malformed required var fails fast. (Redis/BullMQ
+ * for background sentiment/spend-caps arrives with the escalation unit.)
  */
 export const aiServiceEnvSchema = observabilityEnvSchema.extend({
   HOST: z.string().min(1).default('0.0.0.0'),
@@ -14,6 +14,26 @@ export const aiServiceEnvSchema = observabilityEnvSchema.extend({
 
   // --- Database ---
   DATABASE_URL: z.string().min(1),
+
+  // --- JWT verification (same secret/issuer the gateway signs with) ---
+  JWT_SECRET: z.string().min(32),
+  JWT_ISSUER: z.string().min(1).default('graft-gateway'),
+
+  // --- Retrieval tuning ---
+  /** Max KB chunks retrieved per turn for grounding the answer. */
+  RETRIEVAL_TOP_K: z.coerce.number().int().min(1).max(50).default(6),
+
+  // --- Tenant AI key decryption (same envelope key the gateway seals with) ---
+  /** Active master key, base64-encoded; must decode to 32 bytes (AES-256). */
+  AI_KEY_ENCRYPTION_KEY: z.string().refine((v) => {
+    try {
+      return Buffer.from(v, 'base64').length === 32;
+    } catch {
+      return false;
+    }
+  }, 'must be a base64-encoded 32-byte key'),
+  /** Label identifying the active key; must match a key the gateway sealed with. */
+  AI_KEY_ENCRYPTION_KEY_ID: z.string().min(1).default('v1'),
 });
 
 export type AiServiceEnv = z.infer<typeof aiServiceEnvSchema>;

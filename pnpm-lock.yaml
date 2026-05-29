@@ -32,12 +32,27 @@ importers:
 
   apps/ai-service:
     dependencies:
+      '@graft/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@graft/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@graft/crypto':
+        specifier: workspace:*
+        version: link:../../packages/crypto
       '@graft/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@graft/keyring':
+        specifier: workspace:*
+        version: link:../../packages/keyring
       '@graft/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@graft/rag':
+        specifier: workspace:*
+        version: link:../../packages/rag
       '@graft/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -154,12 +169,18 @@ importers:
       '@fastify/multipart':
         specifier: 10.0.0
         version: 10.0.0
+      '@graft/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@graft/crypto':
         specifier: workspace:*
         version: link:../../packages/crypto
       '@graft/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@graft/keyring':
+        specifier: workspace:*
+        version: link:../../packages/keyring
       '@graft/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -187,9 +208,6 @@ importers:
       ioredis:
         specifier: 5.10.1
         version: 5.10.1
-      jose:
-        specifier: 6.2.3
-        version: 6.2.3
       mammoth:
         specifier: 1.12.0
         version: 1.12.0
@@ -253,6 +271,34 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  packages/auth:
+    dependencies:
+      '@graft/db':
+        specifier: workspace:*
+        version: link:../db
+      '@graft/shared':
+        specifier: workspace:*
+        version: link:../shared
+      fastify:
+        specifier: 5.8.5
+        version: 5.8.5
+      fastify-plugin:
+        specifier: 5.1.0
+        version: 5.1.0
+      jose:
+        specifier: 6.2.3
+        version: 6.2.3
+    devDependencies:
+      '@graft/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@graft/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
   packages/crypto:
     devDependencies:
       '@graft/eslint-config':
@@ -304,6 +350,37 @@ importers:
       typescript-eslint:
         specifier: 8.20.0
         version: 8.20.0(eslint@9.18.0)(typescript@5.7.3)
+
+  packages/keyring:
+    dependencies:
+      '@graft/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@graft/crypto':
+        specifier: workspace:*
+        version: link:../crypto
+      '@graft/db':
+        specifier: workspace:*
+        version: link:../db
+      '@graft/rag':
+        specifier: workspace:*
+        version: link:../rag
+      '@graft/shared':
+        specifier: workspace:*
+        version: link:../shared
+      ai:
+        specifier: 6.0.193
+        version: 6.0.193(zod@4.4.3)
+    devDependencies:
+      '@graft/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@graft/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
 
   packages/observability:
     dependencies:

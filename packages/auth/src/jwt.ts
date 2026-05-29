@@ -10,8 +10,8 @@ const ALG = 'HS256';
 
 /**
  * Verifies a gateway-issued access token (HS256, shared secret + issuer) and
- * returns the typed claims. The gateway is the only signer; this service only
- * verifies. Throws on signature/issuer/expiry/claims failure.
+ * returns the typed claims. The gateway is the only signer; internal services only
+ * verify. Throws on signature/issuer/expiry/claims failure.
  */
 export async function verifyAccessToken(token: string, config: JwtVerifyConfig): Promise<JwtClaims> {
   const { payload } = await jwtVerify(token, new TextEncoder().encode(config.secret), {

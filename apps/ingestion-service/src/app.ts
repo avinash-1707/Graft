@@ -1,4 +1,5 @@
 import multipart from '@fastify/multipart';
+import { jwtAuthPlugin, type JwtVerifyConfig } from '@graft/auth';
 import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
 import Fastify, {
@@ -6,9 +7,7 @@ import Fastify, {
   type FastifyError,
   type FastifyInstance,
 } from 'fastify';
-import type { JwtVerifyConfig } from './auth/jwt.js';
 import type { IngestionEnv } from './env.js';
-import authPlugin from './plugins/auth.js';
 import metricsPlugin from './plugins/metrics.js';
 import type { IngestionQueue } from './queue/ingestion-queue.js';
 import { healthRoutes } from './routes/health.js';
@@ -61,7 +60,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     });
   });
 
-  await app.register(authPlugin, { jwtConfig });
+  await app.register(jwtAuthPlugin, { jwtConfig });
 
   await app.register(healthRoutes, { isReady });
   await app.register(metricsRoutes, { metrics });

@@ -1,13 +1,17 @@
+import { jwtAuthPlugin, widgetAuthPlugin, type JwtVerifyConfig } from '@graft/auth';
+import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
 import Fastify, {
   type FastifyBaseLogger,
   type FastifyError,
   type FastifyInstance,
 } from 'fastify';
+import type { AnswerService } from './ai/answer-service.js';
 import type { ConversationService } from './conversation/service.js';
 import metricsPlugin from './plugins/metrics.js';
 import { healthRoutes } from './routes/health.js';
 import { metricsRoutes } from './routes/metrics.js';
+import { widgetMessageRoutes } from './routes/widget-messages.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -19,7 +23,10 @@ declare module 'fastify' {
 export interface BuildAppOptions {
   logger: Logger;
   metrics: Metrics;
+  db: Database;
   conversations: ConversationService;
+  answerService: AnswerService;
+  jwtConfig: JwtVerifyConfig;
   /** Readiness gate; flips to false during graceful shutdown. */
   isReady: () => boolean;
 }
@@ -31,7 +38,7 @@ export interface BuildAppOptions {
  * signal handling; the caller owns the lifecycle.
  */
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
-  const { logger, metrics, conversations, isReady } = opts;
+  const { logger, metrics, db, conversations, answerService, jwtConfig, isReady } = opts;
 
   const loggerInstance: FastifyBaseLogger = logger;
   const app = Fastify({ loggerInstance, trustProxy: true });
@@ -57,8 +64,14 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     });
   });
 
+  // Auth: dashboard/agent JWT verify (for later agent-facing routes) + widget
+  // embed-token validation (the SSE customer path). Both are shared via @graft/auth.
+  await app.register(jwtAuthPlugin, { jwtConfig });
+  await app.register(widgetAuthPlugin, { db });
+
   await app.register(healthRoutes, { isReady });
   await app.register(metricsRoutes, { metrics });
+  await app.register(widgetMessageRoutes, { db, answerService });
 
   return app;
 }

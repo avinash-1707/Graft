@@ -6,8 +6,8 @@ import type {
   preHandlerHookHandler,
 } from 'fastify';
 import fp from 'fastify-plugin';
-import { verifyAccessToken, type JwtVerifyConfig } from '../auth/jwt.js';
-import { Errors } from '../errors.js';
+import { AuthErrors } from './errors.js';
+import { verifyAccessToken, type JwtVerifyConfig } from './jwt.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -22,7 +22,7 @@ declare module 'fastify' {
   }
 }
 
-interface AuthPluginOptions {
+export interface JwtAuthPluginOptions {
   jwtConfig: JwtVerifyConfig;
 }
 
@@ -34,25 +34,31 @@ function bearerToken(request: FastifyRequest): string | undefined {
   return value;
 }
 
-const authPlugin: FastifyPluginAsync<AuthPluginOptions> = async (app, opts) => {
+/**
+ * Decorates `authenticate` (verify bearer → `request.authUser`) and `requireRole`.
+ * Shared across internal services so the JWT-verify path is defined once. Throws
+ * {@link AuthError} on failure, which each service's error handler maps to the
+ * stable `{ error: { code, message } }` shape.
+ */
+const jwtAuthPlugin: FastifyPluginAsync<JwtAuthPluginOptions> = async (app, opts) => {
   app.decorateRequest('authUser', undefined);
 
   app.decorate('authenticate', async (request: FastifyRequest) => {
     const token = bearerToken(request);
-    if (!token) throw Errors.unauthorized();
+    if (!token) throw AuthErrors.unauthorized();
     try {
       request.authUser = await verifyAccessToken(token, opts.jwtConfig);
     } catch {
-      throw Errors.unauthorized();
+      throw AuthErrors.unauthorized();
     }
   });
 
   app.decorate('requireRole', (role: JwtClaims['role']): preHandlerHookHandler => {
     return async (request: FastifyRequest, _reply: FastifyReply) => {
-      if (!request.authUser) throw Errors.unauthorized();
-      if (request.authUser.role !== role) throw Errors.forbidden();
+      if (!request.authUser) throw AuthErrors.unauthorized();
+      if (request.authUser.role !== role) throw AuthErrors.forbidden();
     };
   });
 };
 
-export default fp(authPlugin, { name: 'ingestion-auth' });
+export default fp(jwtAuthPlugin, { name: 'graft-jwt-auth' });

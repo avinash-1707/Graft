@@ -1,7 +1,7 @@
+import { type JwtVerifyConfig } from '@graft/auth';
 import { createDb } from '@graft/db';
 import { createLogger, createMetrics, type Tracing } from '@graft/observability';
 import { buildApp } from './app.js';
-import type { JwtVerifyConfig } from './auth/jwt.js';
 import type { IngestionEnv } from './env.js';
 import { createIngestionQueue } from './queue/ingestion-queue.js';
 import { createStorage } from './storage/s3.js';

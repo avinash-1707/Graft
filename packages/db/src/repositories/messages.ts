@@ -19,6 +19,12 @@ export interface AppendMessageInput {
   conversationId: string;
   role: MessageRole;
   content: string;
+  /**
+   * Optional caller-supplied row id. Lets the streaming path pre-generate the AI
+   * message id so `ai_token` events can reference it before the row is persisted.
+   * Omit to let the DB mint a random uuid.
+   */
+  id?: string;
   /** Set for AGENT messages; null for CUSTOMER/AI/SYSTEM. */
   senderAgentId?: string | null;
   /** Client-supplied idempotency key (CUSTOMER turns); enables dedup on replay. */
@@ -81,6 +87,7 @@ export async function appendMessage(
     const [row] = await tx
       .insert(messages)
       .values({
+        ...(input.id != null ? { id: input.id } : {}),
         organizationId: input.organizationId,
         conversationId: input.conversationId,
         sequence,

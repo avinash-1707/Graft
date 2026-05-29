@@ -1,5 +1,8 @@
+import { type JwtVerifyConfig } from '@graft/auth';
+import { createEncryptor } from '@graft/crypto';
 import { createDb } from '@graft/db';
 import { createLogger, createMetrics, type Tracing } from '@graft/observability';
+import { AnswerService } from './ai/answer-service.js';
 import { buildApp } from './app.js';
 import { ConversationService } from './conversation/service.js';
 import type { AiServiceEnv } from './env.js';
@@ -23,9 +26,28 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
 
   const { db, close: closeDb } = createDb({ connectionString: env.DATABASE_URL });
   const conversations = new ConversationService(db);
+  const encryptor = createEncryptor({
+    keyBase64: env.AI_KEY_ENCRYPTION_KEY,
+    keyId: env.AI_KEY_ENCRYPTION_KEY_ID,
+  });
+  const answerService = new AnswerService({
+    db,
+    encryptor,
+    conversations,
+    topK: env.RETRIEVAL_TOP_K,
+  });
+  const jwtConfig: JwtVerifyConfig = { secret: env.JWT_SECRET, issuer: env.JWT_ISSUER };
 
   let ready = true;
-  const app = await buildApp({ logger, metrics, conversations, isReady: () => ready });
+  const app = await buildApp({
+    logger,
+    metrics,
+    db,
+    conversations,
+    answerService,
+    jwtConfig,
+    isReady: () => ready,
+  });
 
   await app.listen({ host: env.HOST, port: env.PORT });
 

@@ -7,11 +7,11 @@ import {
   type Database,
 } from '@graft/db';
 import type { Logger } from '@graft/observability';
+import { resolveEmbedder } from '@graft/keyring';
 import { chunkText } from '@graft/rag';
 import { kbIngestionJobSchema, type KbIngestionJob } from '@graft/shared';
 import type { Job } from 'bullmq';
 import type { Storage } from '../storage/s3.js';
-import { resolveEmbedder } from './embedder-factory.js';
 import { parseDocument } from './parse.js';
 
 export interface ProcessorDeps {
