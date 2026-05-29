@@ -5,6 +5,8 @@ export * from './organizations.js';
 export * from './allowed-origins.js';
 export * from './sessions.js';
 export * from './ai-provider-credentials.js';
+export * from './ai-settings.js';
+export * from './kb-chunks.js';
 export * from './widget-configs.js';
 export * from './escalation-configs.js';
 export * from './kb-documents.js';

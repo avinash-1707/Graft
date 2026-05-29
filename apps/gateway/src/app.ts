@@ -1,4 +1,5 @@
 import rateLimit from '@fastify/rate-limit';
+import type { Encryptor } from '@graft/crypto';
 import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
 import Fastify, {
@@ -8,7 +9,6 @@ import Fastify, {
 } from 'fastify';
 import type { JwtConfig } from './auth/jwt.js';
 import type { AuthService } from './auth/service.js';
-import type { Encryptor } from './crypto/encryption.js';
 import type { GatewayEnv } from './env.js';
 import authPlugin from './plugins/auth.js';
 import metricsPlugin from './plugins/metrics.js';
@@ -18,6 +18,7 @@ import { authRoutes } from './routes/auth.js';
 import { downstreamRoutes } from './routes/downstream.js';
 import { healthRoutes } from './routes/health.js';
 import { aiCredentialRoutes } from './routes/ai-credentials.js';
+import { aiSettingsRoutes } from './routes/ai-settings.js';
 import { metricsRoutes } from './routes/metrics.js';
 import { orgAdminRoutes } from './routes/org-admin.js';
 import { orgConfigRoutes } from './routes/org-config.js';
@@ -95,6 +96,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   await app.register(agentRoutes, { authService });
   await app.register(orgAdminRoutes, { db });
   await app.register(aiCredentialRoutes, { db, encryptor });
+  await app.register(aiSettingsRoutes, { db });
   await app.register(orgConfigRoutes, { db });
   await app.register(widgetRoutes, { db, env });
   await app.register(downstreamRoutes);

@@ -1,15 +1,19 @@
 import {
   deleteAiProviderCredential,
-  getAiProviderCredentialStatus,
+  getAiSettings,
+  listAiProviderCredentialStatuses,
   upsertAiProviderCredential,
+  upsertAiSettings,
   type Database,
 } from '@graft/db';
+import type { Encryptor } from '@graft/crypto';
 import {
+  aiProviderSchema,
   setAiProviderCredentialRequestSchema,
-  type AiProviderCredentialStatus,
+  type AiCredentialStatus,
 } from '@graft/shared';
 import type { FastifyPluginAsync } from 'fastify';
-import type { Encryptor } from '../crypto/encryption.js';
+import { z } from 'zod';
 import { parseOr400 } from '../http/validate.js';
 
 interface AiCredentialRouteOptions {
@@ -17,10 +21,20 @@ interface AiCredentialRouteOptions {
   encryptor: Encryptor;
 }
 
+const providerParamsSchema = z.object({ provider: aiProviderSchema });
+
+async function loadStatus(db: Database, orgId: string): Promise<AiCredentialStatus> {
+  const rows = await listAiProviderCredentialStatuses(db, orgId);
+  return {
+    credentials: rows.map((r) => ({ provider: r.provider, updatedAt: r.updatedAt.toISOString() })),
+  };
+}
+
 /**
- * Owner-only AI provider credential management. The raw API key is encrypted at
- * rest on write and is never returned by any route — only its presence,
- * provider, and last-updated time are exposed. Scope is the owner's JWT org.
+ * Owner-only AI provider keyring. At most one key per (org, provider); raw keys
+ * are encrypted at rest on write and never returned — only the set of configured
+ * providers + last-updated time. Deleting a provider's key also clears any
+ * `ai_settings` selection that pointed at it. Scope is the owner's JWT org.
  */
 export const aiCredentialRoutes: FastifyPluginAsync<AiCredentialRouteOptions> = async (
   app,
@@ -29,18 +43,11 @@ export const aiCredentialRoutes: FastifyPluginAsync<AiCredentialRouteOptions> = 
   const { db, encryptor } = opts;
   const ownerOnly = { preHandler: [app.authenticate, app.requireRole('OWNER')] };
 
-  app.get('/org/ai-provider', ownerOnly, async (request): Promise<AiProviderCredentialStatus> => {
-    const orgId = request.authUser!.org;
-    const status = await getAiProviderCredentialStatus(db, orgId);
-    if (!status) return { configured: false };
-    return {
-      configured: true,
-      provider: status.provider,
-      updatedAt: status.updatedAt.toISOString(),
-    };
+  app.get('/org/ai-providers', ownerOnly, async (request): Promise<AiCredentialStatus> => {
+    return loadStatus(db, request.authUser!.org);
   });
 
-  app.put('/org/ai-provider', ownerOnly, async (request, reply) => {
+  app.put('/org/ai-providers', ownerOnly, async (request, reply) => {
     const data = parseOr400(setAiProviderCredentialRequestSchema, request.body, reply);
     if (!data) return;
     const orgId = request.authUser!.org;
@@ -52,21 +59,27 @@ export const aiCredentialRoutes: FastifyPluginAsync<AiCredentialRouteOptions> = 
       encryptionAuthTag: sealed.authTag,
       encryptionKeyId: sealed.keyId,
     });
-    const status = await getAiProviderCredentialStatus(db, orgId);
-    return reply.send({
-      configured: true,
-      provider: status?.provider ?? data.provider,
-      updatedAt: status?.updatedAt.toISOString(),
-    } satisfies AiProviderCredentialStatus);
+    return reply.send(await loadStatus(db, orgId));
   });
 
-  app.delete('/org/ai-provider', ownerOnly, async (request, reply) => {
+  app.delete('/org/ai-providers/:provider', ownerOnly, async (request, reply) => {
+    const params = parseOr400(providerParamsSchema, request.params, reply);
+    if (!params) return;
     const orgId = request.authUser!.org;
-    const removed = await deleteAiProviderCredential(db, orgId);
+    const removed = await deleteAiProviderCredential(db, orgId, params.provider);
     if (!removed) {
       return reply
         .code(404)
-        .send({ error: { code: 'NOT_FOUND', message: 'No AI provider key configured.' } });
+        .send({ error: { code: 'NOT_FOUND', message: 'No key configured for that provider.' } });
+    }
+    // Clear any selection that pointed at the now-deleted key.
+    const settings = await getAiSettings(db, orgId);
+    if (settings.chatProvider === params.provider || settings.embeddingProvider === params.provider) {
+      await upsertAiSettings(db, orgId, {
+        chatProvider: settings.chatProvider === params.provider ? null : settings.chatProvider,
+        embeddingProvider:
+          settings.embeddingProvider === params.provider ? null : settings.embeddingProvider,
+      });
     }
     return reply.code(204).send();
   });

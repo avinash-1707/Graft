@@ -36,6 +36,27 @@ export async function createKbDocument(
   return row;
 }
 
+/** Loads a document by id (worker needs fileType + org to process it). */
+export async function getKbDocument(db: Database, id: string): Promise<KbDocumentRow | undefined> {
+  return db.query.kbDocuments.findFirst({ where: eq(kbDocuments.id, id) });
+}
+
+/** Marks a document PROCESSING (worker picked up the job). */
+export async function markKbDocumentProcessing(db: Database, id: string): Promise<void> {
+  await db
+    .update(kbDocuments)
+    .set({ status: 'PROCESSING', error: null })
+    .where(eq(kbDocuments.id, id));
+}
+
+/** Marks a document READY (chunks embedded + upserted). */
+export async function markKbDocumentReady(db: Database, id: string): Promise<void> {
+  await db
+    .update(kbDocuments)
+    .set({ status: 'READY', error: null, processedAt: new Date() })
+    .where(eq(kbDocuments.id, id));
+}
+
 /** Marks a document FAILED with an error message (e.g. staging or enqueue failure). */
 export async function markKbDocumentFailed(
   db: Database,

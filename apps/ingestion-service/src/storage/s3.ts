@@ -1,9 +1,11 @@
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import type { IngestionEnv } from '../env.js';
 
 export interface Storage {
   /** Stores an object's bytes under `key`. */
   putObject(key: string, body: Buffer, contentType: string): Promise<void>;
+  /** Reads an object's full bytes (worker side). */
+  getObject(key: string): Promise<Buffer>;
   /** Removes an object; used to clean up staged uploads after processing/failure. */
   deleteObject(key: string): Promise<void>;
   /** Releases the underlying client. */
@@ -37,6 +39,14 @@ export function createStorage(env: IngestionEnv): Storage {
           ContentLength: body.byteLength,
         }),
       );
+    },
+    async getObject(key) {
+      const result = await client.send(
+        new GetObjectCommand({ Bucket: env.S3_BUCKET, Key: key }),
+      );
+      if (!result.Body) throw new Error(`object not found: ${key}`);
+      const bytes = await result.Body.transformToByteArray();
+      return Buffer.from(bytes);
     },
     async deleteObject(key) {
       await client.send(new DeleteObjectCommand({ Bucket: env.S3_BUCKET, Key: key }));

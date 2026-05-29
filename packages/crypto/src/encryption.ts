@@ -1,5 +1,4 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import type { GatewayEnv } from '../env.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_BYTES = 12; // GCM standard nonce length
@@ -19,7 +18,8 @@ export interface EncryptedPayload {
  * Holds a keyring so a future key rotation only needs the old keys kept around
  * for decrypt while the active key encrypts new writes — each row records the
  * `keyId` it was sealed with. The master key(s) come from env and never leave
- * the process.
+ * the process. Shared by the gateway (encrypts on write) and the ingestion/AI
+ * services (decrypt in-memory at call time).
  */
 export class Encryptor {
   constructor(
@@ -57,11 +57,18 @@ export class Encryptor {
   }
 }
 
-/** Builds the gateway encryptor from validated env. */
-export function createEncryptor(env: GatewayEnv): Encryptor {
-  const key = Buffer.from(env.AI_KEY_ENCRYPTION_KEY, 'base64');
+export interface EncryptorConfig {
+  /** Active master key, base64-encoded; must decode to 32 bytes (AES-256). */
+  keyBase64: string;
+  /** Label recorded on each encrypted row; identifies the key for rotation. */
+  keyId: string;
+}
+
+/** Builds an {@link Encryptor} from a single active base64 key + its id. */
+export function createEncryptor(config: EncryptorConfig): Encryptor {
+  const key = Buffer.from(config.keyBase64, 'base64');
   if (key.length !== KEY_BYTES) {
-    throw new Error(`AI_KEY_ENCRYPTION_KEY must decode to ${KEY_BYTES} bytes (got ${key.length})`);
+    throw new Error(`encryption key must decode to ${KEY_BYTES} bytes (got ${key.length})`);
   }
-  return new Encryptor(env.AI_KEY_ENCRYPTION_KEY_ID, new Map([[env.AI_KEY_ENCRYPTION_KEY_ID, key]]));
+  return new Encryptor(config.keyId, new Map([[config.keyId, key]]));
 }

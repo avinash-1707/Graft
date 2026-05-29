@@ -2,9 +2,10 @@ import { z } from 'zod';
 import { aiProviderSchema } from '../enums/ai-provider.js';
 
 /**
- * Owner request to set (or replace) the tenant's AI provider API key. The raw
- * key is accepted here, encrypted at rest by the gateway, and never returned to
- * any client. Provider keys are opaque tokens with no whitespace.
+ * Owner request to set (or replace) one provider's API key in the tenant keyring.
+ * The raw key is accepted here, encrypted at rest by the gateway, and never
+ * returned to any client. Provider keys are opaque tokens with no whitespace.
+ * One key per (org, provider); re-setting the same provider rotates its key.
  */
 export const setAiProviderCredentialRequestSchema = z.object({
   provider: aiProviderSchema,
@@ -18,12 +19,17 @@ export const setAiProviderCredentialRequestSchema = z.object({
 export type SetAiProviderCredentialRequest = z.infer<typeof setAiProviderCredentialRequestSchema>;
 
 /**
- * Safe projection returned to the owner: confirms whether a key is configured
- * and which provider, but never exposes the key material itself.
+ * Safe projection of one configured key: which provider + when it was last set.
+ * Never exposes the key material itself.
  */
-export const aiProviderCredentialStatusSchema = z.object({
-  configured: z.boolean(),
-  provider: aiProviderSchema.optional(),
-  updatedAt: z.string().optional(),
+export const aiProviderCredentialSummarySchema = z.object({
+  provider: aiProviderSchema,
+  updatedAt: z.string(),
 });
-export type AiProviderCredentialStatus = z.infer<typeof aiProviderCredentialStatusSchema>;
+export type AiProviderCredentialSummary = z.infer<typeof aiProviderCredentialSummarySchema>;
+
+/** The tenant's full keyring status: the set of providers that have a key. */
+export const aiCredentialStatusSchema = z.object({
+  credentials: z.array(aiProviderCredentialSummarySchema),
+});
+export type AiCredentialStatus = z.infer<typeof aiCredentialStatusSchema>;

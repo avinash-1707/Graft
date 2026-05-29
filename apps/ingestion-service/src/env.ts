@@ -37,6 +37,18 @@ export const ingestionEnvSchema = observabilityEnvSchema.extend({
   // --- Upload limits ---
   /** Max accepted upload size in bytes (default 25 MiB). */
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(26_214_400),
+
+  // --- Tenant AI key decryption (worker; same envelope key the gateway seals with) ---
+  /** Active master key, base64-encoded; must decode to 32 bytes (AES-256). */
+  AI_KEY_ENCRYPTION_KEY: z.string().refine((v) => {
+    try {
+      return Buffer.from(v, 'base64').length === 32;
+    } catch {
+      return false;
+    }
+  }, 'must be a base64-encoded 32-byte key'),
+  /** Label identifying the active key; must match a key the gateway sealed with. */
+  AI_KEY_ENCRYPTION_KEY_ID: z.string().min(1).default('v1'),
 });
 
 export type IngestionEnv = z.infer<typeof ingestionEnvSchema>;

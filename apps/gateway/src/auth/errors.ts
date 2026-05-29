@@ -25,6 +25,7 @@ export const AuthErrors = {
   unauthorized: () => new AuthError('UNAUTHORIZED', 401, 'Authentication required.'),
   forbidden: () => new AuthError('FORBIDDEN', 403, 'You do not have access to this resource.'),
   agentNotFound: () => new AuthError('AGENT_NOT_FOUND', 404, 'Agent not found.'),
+  badRequest: (message: string) => new AuthError('BAD_REQUEST', 400, message),
 } as const;
 
 /** Public-widget validation errors. Reuse {@link AuthError}'s code+status contract. */
