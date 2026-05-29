@@ -1,10 +1,12 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
 import {
+  AI_INFERENCE_STATUSES,
   AI_PROVIDERS,
   CONVERSATION_STATES,
   ESCALATION_TRIGGERS,
   MESSAGE_ROLES,
   USER_ROLES,
+  type AiInferenceStatus,
   type AiProvider,
   type ConversationState,
   type EscalationTrigger,
@@ -25,6 +27,10 @@ export const aiProviderPgEnum = pgEnum('ai_provider', asTuple<AiProvider>(AI_PRO
 export const escalationTriggerPgEnum = pgEnum(
   'escalation_trigger',
   asTuple<EscalationTrigger>(ESCALATION_TRIGGERS),
+);
+export const aiInferenceStatusPgEnum = pgEnum(
+  'ai_inference_status',
+  asTuple<AiInferenceStatus>(AI_INFERENCE_STATUSES),
 );
 
 export const kbDocumentTypePgEnum = pgEnum('kb_document_type', ['PDF', 'DOCX', 'TEXT']);

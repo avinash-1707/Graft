@@ -10,3 +10,7 @@ export * from './messages.js';
 export * from './internal-notes.js';
 export * from './kb-documents.js';
 export * from './kb-chunks.js';
+export * from './ai-inferences.js';
+export * from './ai-metrics-15m.js';
+export * from './ai-metrics-daily.js';
+export * from './ai-metrics-rollup-state.js';
