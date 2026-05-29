@@ -19,6 +19,7 @@ import { healthRoutes } from './routes/health.js';
 import { aiCredentialRoutes } from './routes/ai-credentials.js';
 import { metricsRoutes } from './routes/metrics.js';
 import { orgAdminRoutes } from './routes/org-admin.js';
+import { orgConfigRoutes } from './routes/org-config.js';
 import { widgetRoutes } from './routes/widget.js';
 
 export interface BuildAppOptions {
@@ -92,6 +93,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   await app.register(authRoutes, { authService });
   await app.register(orgAdminRoutes, { db });
   await app.register(aiCredentialRoutes, { db, encryptor });
+  await app.register(orgConfigRoutes, { db });
   await app.register(widgetRoutes, { db, env });
   await app.register(downstreamRoutes);
 

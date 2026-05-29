@@ -8,6 +8,10 @@ export const SWITCH_TO_AI_COPY = 'You are now talking to an AI agent.' as const;
 export const DEFAULT_GROUNDING_THRESHOLD = 0.7 as const;
 export const DEFAULT_HUMAN_REQUEST_COUNT_TO_ESCALATE = 3 as const;
 
+/** Default widget bot name + greeting shown until the tenant customizes them. */
+export const DEFAULT_WIDGET_BOT_NAME = 'Support' as const;
+export const DEFAULT_WIDGET_GREETING = 'Hi! How can we help you today?' as const;
+
 export const SSE_EVENT_NAME = 'graft' as const;
 
 /** Header carrying the per-org embed token on public widget requests. */
