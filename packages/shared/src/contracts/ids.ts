@@ -5,6 +5,9 @@ export const uuidSchema = z.uuid();
 export const organizationIdSchema = uuidSchema.brand<'OrganizationId'>();
 export type OrganizationId = z.infer<typeof organizationIdSchema>;
 
+export const userIdSchema = uuidSchema.brand<'UserId'>();
+export type UserId = z.infer<typeof userIdSchema>;
+
 export const conversationIdSchema = uuidSchema.brand<'ConversationId'>();
 export type ConversationId = z.infer<typeof conversationIdSchema>;
 

@@ -1,5 +1,9 @@
+import { createDb } from '@graft/db';
 import { createLogger, createMetrics, type Tracing } from '@graft/observability';
 import { buildApp } from './app.js';
+import { createMailer } from './auth/mailer.js';
+import type { JwtConfig } from './auth/jwt.js';
+import { AuthService } from './auth/service.js';
 import type { GatewayEnv } from './env.js';
 import { SERVICE_NAME } from './telemetry.js';
 
@@ -22,8 +26,17 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
   });
   const metrics = createMetrics({ serviceName: env.OTEL_SERVICE_NAME ?? SERVICE_NAME });
 
+  const { db, close: closeDb } = createDb({ connectionString: env.DATABASE_URL });
+  const mailer = createMailer(env, logger);
+  const authService = new AuthService({ db, mailer, logger, env });
+  const jwtConfig: JwtConfig = {
+    secret: env.JWT_SECRET,
+    issuer: env.JWT_ISSUER,
+    accessTtlSeconds: env.JWT_ACCESS_TTL_SECONDS,
+  };
+
   let ready = true;
-  const app = await buildApp({ env, logger, metrics, isReady: () => ready });
+  const app = await buildApp({ env, logger, metrics, authService, jwtConfig, isReady: () => ready });
 
   await app.listen({ host: env.HOST, port: env.PORT });
 
@@ -43,6 +56,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     void (async () => {
       try {
         await app.close();
+        await closeDb();
         await tracing.shutdown();
         logger.info('shutdown complete');
         clearTimeout(timer);

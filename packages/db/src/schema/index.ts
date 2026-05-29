@@ -1,6 +1,7 @@
 export * from './enums.js';
 export * from './organizations.js';
 export * from './users.js';
+export * from './auth-codes.js';
 export * from './ai-provider-credentials.js';
 export * from './widget-configs.js';
 export * from './escalation-configs.js';
