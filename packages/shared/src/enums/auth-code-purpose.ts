@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-export const authCodePurposeSchema = z.enum(['EMAIL_VERIFICATION', 'PASSWORD_RESET']);
+export const authCodePurposeSchema = z.enum([
+  'EMAIL_VERIFICATION',
+  'PASSWORD_RESET',
+  'AGENT_INVITE',
+]);
 
 export type AuthCodePurpose = z.infer<typeof authCodePurposeSchema>;
 export const AuthCodePurpose = authCodePurposeSchema.enum;

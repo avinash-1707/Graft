@@ -13,6 +13,17 @@ export async function findOrganizationByEmbedToken(
   });
 }
 
+export async function getOrganizationName(
+  db: Database,
+  orgId: string,
+): Promise<string | undefined> {
+  const row = await db.query.organizations.findFirst({
+    where: eq(organizations.id, orgId),
+    columns: { name: true },
+  });
+  return row?.name;
+}
+
 export async function getEmbedToken(db: Database, orgId: string): Promise<string | undefined> {
   const row = await db.query.organizations.findFirst({
     where: eq(organizations.id, orgId),

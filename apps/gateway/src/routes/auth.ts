@@ -1,4 +1,5 @@
 import {
+  acceptInviteRequestSchema,
   forgotPasswordRequestSchema,
   loginRequestSchema,
   resendVerificationRequestSchema,
@@ -63,6 +64,12 @@ export const authRoutes: FastifyPluginAsync<AuthRouteOptions> = async (app, opts
     if (!data) return;
     await authService.resetPassword(data);
     return reply.send({ message: 'Password updated. You can now sign in.' });
+  });
+
+  app.post('/auth/accept-invite', async (request, reply) => {
+    const data = parseOr400(acceptInviteRequestSchema, request.body, reply);
+    if (!data) return;
+    return reply.send(await authService.acceptInvite(data));
   });
 
   app.get('/auth/me', { preHandler: [app.authenticate] }, async (request) => {

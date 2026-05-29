@@ -5,6 +5,7 @@ import type { GatewayEnv } from '../env.js';
 export interface Mailer {
   sendVerificationCode(to: string, name: string, code: string): Promise<void>;
   sendPasswordResetCode(to: string, name: string, code: string): Promise<void>;
+  sendAgentInvite(to: string, name: string, orgName: string, code: string): Promise<void>;
 }
 
 /**
@@ -53,6 +54,16 @@ export function createMailer(env: GatewayEnv, logger: Logger): Mailer {
         `Hi ${name},\n\nYour ${env.APP_NAME} password reset code is: ${code}\n\n` +
           `It expires in ${Math.round(env.OTP_TTL_MS / 60000)} minutes.\n` +
           `If you didn't request this, you can ignore this email.`,
+      ),
+    sendAgentInvite: (to, name, orgName, code) =>
+      send(
+        to,
+        `You've been invited to ${orgName} on ${env.APP_NAME}`,
+        `Hi ${name},\n\nYou've been invited to join ${orgName} as a support agent on ` +
+          `${env.APP_NAME}. Your invite code is: ${code}\n\n` +
+          `Use it to set your password and activate your account. ` +
+          `It expires in ${Math.round(env.OTP_TTL_MS / 60000)} minutes.\n` +
+          `If you weren't expecting this, you can ignore this email.`,
       ),
   };
 }

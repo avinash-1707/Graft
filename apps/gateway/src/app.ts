@@ -13,6 +13,7 @@ import type { GatewayEnv } from './env.js';
 import authPlugin from './plugins/auth.js';
 import metricsPlugin from './plugins/metrics.js';
 import widgetAuthPlugin from './plugins/widget-auth.js';
+import { agentRoutes } from './routes/agents.js';
 import { authRoutes } from './routes/auth.js';
 import { downstreamRoutes } from './routes/downstream.js';
 import { healthRoutes } from './routes/health.js';
@@ -91,6 +92,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   await app.register(healthRoutes, { isReady });
   await app.register(metricsRoutes, { metrics });
   await app.register(authRoutes, { authService });
+  await app.register(agentRoutes, { authService });
   await app.register(orgAdminRoutes, { db });
   await app.register(aiCredentialRoutes, { db, encryptor });
   await app.register(orgConfigRoutes, { db });

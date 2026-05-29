@@ -1,0 +1,1 @@
+ALTER TYPE "public"."auth_code_purpose" ADD VALUE 'AGENT_INVITE';

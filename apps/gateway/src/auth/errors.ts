@@ -24,6 +24,7 @@ export const AuthErrors = {
   alreadyVerified: () => new AuthError('ALREADY_VERIFIED', 409, 'Email is already verified.'),
   unauthorized: () => new AuthError('UNAUTHORIZED', 401, 'Authentication required.'),
   forbidden: () => new AuthError('FORBIDDEN', 403, 'You do not have access to this resource.'),
+  agentNotFound: () => new AuthError('AGENT_NOT_FOUND', 404, 'Agent not found.'),
 } as const;
 
 /** Public-widget validation errors. Reuse {@link AuthError}'s code+status contract. */

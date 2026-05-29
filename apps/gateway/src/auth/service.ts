@@ -1,9 +1,13 @@
 import {
+  agentSummarySchema,
   authUserSchema,
+  type AcceptInviteRequest,
+  type AgentSummary,
   type AuthCodePurpose,
   type AuthTokenResponse,
   type AuthUser,
   type ForgotPasswordRequest,
+  type InviteAgentRequest,
   type LoginRequest,
   type ResendVerificationRequest,
   type ResetPasswordRequest,
@@ -12,11 +16,15 @@ import {
 } from '@graft/shared';
 import {
   consumeAuthCode,
+  createAgentUser,
   createAuthCode,
   createOrganizationWithOwner,
+  deleteAgentForOrg,
   findActiveAuthCode,
   findUserByEmail,
+  getOrganizationName,
   incrementAuthCodeAttempts,
+  listAgentsByOrg,
   markEmailVerified,
   updateUserPasswordHash,
   type Database,
@@ -48,6 +56,25 @@ function toAuthUser(row: UserRow): AuthUser {
     emailVerified: row.emailVerifiedAt !== null,
   });
 }
+
+function toAgentSummary(row: UserRow): AgentSummary {
+  return agentSummarySchema.parse({
+    id: row.id,
+    organizationId: row.organizationId,
+    email: row.email,
+    name: row.name,
+    role: row.role,
+    status: row.emailVerifiedAt !== null ? 'ACTIVE' : 'PENDING',
+    createdAt: row.createdAt.toISOString(),
+  });
+}
+
+/**
+ * Sentinel password hash for an invited-but-not-yet-activated agent. It is not a
+ * valid `scrypt$salt$hash` triple, so {@link verifyPassword} always rejects it —
+ * the agent cannot log in until they accept the invite and set a real password.
+ */
+const UNSET_PASSWORD_HASH = '!';
 
 export class AuthService {
   private readonly jwtConfig: JwtConfig;
@@ -124,13 +151,74 @@ export class AuthService {
     if (user.emailVerifiedAt === null) await markEmailVerified(this.deps.db, user.id);
   }
 
+  /** Lists an org's customer-support-agents (PENDING + ACTIVE). Owner-only caller. */
+  async listAgents(organizationId: string): Promise<AgentSummary[]> {
+    const rows = await listAgentsByOrg(this.deps.db, organizationId);
+    return rows.map(toAgentSummary);
+  }
+
+  /**
+   * Invites a customer-support-agent by email and emails an invite code. If the
+   * email already belongs to a PENDING agent in the same org, the invite is
+   * re-issued; any other existing account collides ({@link AuthErrors.emailInUse}).
+   */
+  async inviteAgent(
+    organizationId: string,
+    input: InviteAgentRequest,
+  ): Promise<{ agent: AgentSummary }> {
+    const existing = await findUserByEmail(this.deps.db, input.email);
+    let agent: UserRow;
+    if (existing) {
+      const reInvitable =
+        existing.organizationId === organizationId &&
+        existing.role === 'CUSTOMER_SUPPORT_AGENT' &&
+        existing.emailVerifiedAt === null;
+      if (!reInvitable) throw AuthErrors.emailInUse();
+      agent = existing;
+    } else {
+      agent = await createAgentUser(this.deps.db, {
+        organizationId,
+        email: input.email,
+        name: input.name,
+        passwordHash: UNSET_PASSWORD_HASH,
+      });
+    }
+
+    await this.issueAndSendCode(agent, 'AGENT_INVITE', organizationId);
+    return { agent: toAgentSummary(agent) };
+  }
+
+  /** Activates an invited agent: sets their password via the invite OTP, then signs in. */
+  async acceptInvite(input: AcceptInviteRequest): Promise<AuthTokenResponse> {
+    const user = await findUserByEmail(this.deps.db, input.email);
+    if (!user || user.role !== 'CUSTOMER_SUPPORT_AGENT' || user.emailVerifiedAt !== null) {
+      throw AuthErrors.invalidCode();
+    }
+
+    await this.consumeCode(user.id, 'AGENT_INVITE', input.code);
+    await updateUserPasswordHash(this.deps.db, user.id, await hashPassword(input.newPassword));
+    await markEmailVerified(this.deps.db, user.id);
+
+    return this.issueToken({ ...user, emailVerifiedAt: new Date() });
+  }
+
+  /** Removes an agent from the org. Org + role scoped; 404 if no such agent. */
+  async removeAgent(organizationId: string, agentId: string): Promise<void> {
+    const removed = await deleteAgentForOrg(this.deps.db, organizationId, agentId);
+    if (!removed) throw AuthErrors.agentNotFound();
+  }
+
   private async issueToken(user: UserRow): Promise<AuthTokenResponse> {
     const authUser = toAuthUser(user);
     const { token, expiresAt } = await signAccessToken(authUser, this.jwtConfig);
     return { token, expiresAt, user: authUser };
   }
 
-  private async issueAndSendCode(user: UserRow, purpose: AuthCodePurpose): Promise<void> {
+  private async issueAndSendCode(
+    user: UserRow,
+    purpose: AuthCodePurpose,
+    organizationId?: string,
+  ): Promise<void> {
     const code = generateOtp(this.deps.env.OTP_LENGTH);
     await createAuthCode(this.deps.db, {
       userId: user.id,
@@ -140,8 +228,13 @@ export class AuthService {
     });
     if (purpose === 'EMAIL_VERIFICATION') {
       await this.deps.mailer.sendVerificationCode(user.email, user.name, code);
-    } else {
+    } else if (purpose === 'PASSWORD_RESET') {
       await this.deps.mailer.sendPasswordResetCode(user.email, user.name, code);
+    } else {
+      const orgName =
+        (await getOrganizationName(this.deps.db, organizationId ?? user.organizationId)) ??
+        this.deps.env.APP_NAME;
+      await this.deps.mailer.sendAgentInvite(user.email, user.name, orgName, code);
     }
   }
 
