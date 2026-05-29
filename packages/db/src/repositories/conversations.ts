@@ -1,5 +1,5 @@
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
-import type { EscalationTrigger } from '@graft/shared';
+import type { ConversationState, EscalationTrigger } from '@graft/shared';
 import type { Database } from '../client.js';
 import { conversations } from '../schema/conversations.js';
 
@@ -102,4 +102,66 @@ export async function transitionToEscalationPending(
     )
     .returning();
   return row;
+}
+
+/** A conversation an agent successfully claimed, with the state it moved FROM. */
+export interface ClaimedConversation {
+  conversationId: string;
+  assignedAgentId: string;
+  /** Always AGENT_ASSIGNED after a claim. */
+  state: ConversationState;
+  /** State the claim transitioned from — ESCALATION_PENDING or AI_ACTIVE (takeover). */
+  previousState: ConversationState;
+  /** The trigger that put it in ESCALATION_PENDING, null for a proactive AI_ACTIVE takeover. */
+  escalationTrigger: EscalationTrigger | null;
+}
+
+/**
+ * Atomic conversation claim (invariant 2): a single compare-and-set that flips
+ * ESCALATION_PENDING (normal claim) OR AI_ACTIVE (proactive agent takeover) →
+ * AGENT_ASSIGNED and assigns the agent, only while still unclaimed
+ * (`assigned_agent_id IS NULL`). Two agents can never both win: Postgres serializes
+ * the row lock and re-checks the predicate after the first writer commits, so the
+ * loser matches no row. Returns the claimed row (with the prior state for metrics)
+ * or undefined when nothing was claimed (already taken, closed, or not in this org).
+ * The `FROM (SELECT ...)` subquery reads the pre-update snapshot, yielding the
+ * previous state in the same atomic statement. Tenant-scoped.
+ */
+export async function claimConversation(
+  db: Database,
+  conversationId: string,
+  organizationId: string,
+  agentId: string,
+): Promise<ClaimedConversation | undefined> {
+  const rows = (await db.execute(sql`
+    UPDATE conversations AS c
+    SET state = 'AGENT_ASSIGNED', assigned_agent_id = ${agentId}, updated_at = now()
+    FROM (SELECT id, state FROM conversations WHERE id = ${conversationId}) AS prev
+    WHERE c.id = prev.id
+      AND c.organization_id = ${organizationId}
+      AND c.assigned_agent_id IS NULL
+      AND c.state IN ('ESCALATION_PENDING', 'AI_ACTIVE')
+    RETURNING
+      c.id,
+      c.assigned_agent_id AS assigned_agent_id,
+      c.state AS state,
+      c.escalation_trigger AS escalation_trigger,
+      prev.state AS previous_state
+  `)) as unknown as Array<{
+    id: string;
+    assigned_agent_id: string;
+    state: ConversationState;
+    escalation_trigger: EscalationTrigger | null;
+    previous_state: ConversationState;
+  }>;
+
+  const row = rows[0];
+  if (!row) return undefined;
+  return {
+    conversationId: row.id,
+    assignedAgentId: row.assigned_agent_id,
+    state: row.state,
+    previousState: row.previous_state,
+    escalationTrigger: row.escalation_trigger,
+  };
 }

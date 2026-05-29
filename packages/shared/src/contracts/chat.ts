@@ -5,10 +5,14 @@ import { conversationIdSchema } from './ids.js';
 export const CHAT_EVENTS = {
   /** client → server: join a conversation room (ack'd). */
   JOIN: 'conversation:join',
+  /** agent → server: atomically claim a conversation (ack'd with the claim result). */
+  CLAIM: 'conversation:claim',
   /** client → server AND server → client: typing indicator. */
   TYPING: 'typing',
   /** server → client: a participant joined/left the conversation. */
   PRESENCE: 'presence',
+  /** server → room: the conversation's state changed (e.g. an agent claimed it). */
+  STATE_CHANGED: 'state_changed',
 } as const;
 
 export const chatParticipantSchema = z.enum(['AGENT', 'CUSTOMER']);

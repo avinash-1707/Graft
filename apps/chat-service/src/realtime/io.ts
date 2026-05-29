@@ -7,12 +7,16 @@ import {
   chatPresenceSchema,
   chatTypingBroadcastSchema,
   chatTypingSchema,
+  claimRequestSchema,
+  stateChangedEventSchema,
   type ChatJoinAck,
+  type ClaimResult,
 } from '@graft/shared';
 import { createAdapter } from '@socket.io/redis-adapter';
 import type { Redis } from 'ioredis';
 import type { Server as HttpServer } from 'node:http';
 import { Server, type DefaultEventsMap } from 'socket.io';
+import type { ClaimService } from '../claim/service.js';
 import { authenticateSocket, SocketAuthError, type ChatIdentity } from './auth.js';
 
 interface SocketData {
@@ -31,6 +35,8 @@ export interface SocketServerDeps {
   /** Redis pub/sub pair for the Socket.IO adapter (cross-instance fan-out). */
   pub: Redis;
   sub: Redis;
+  /** Atomic claim + abort-on-takeover (unit 19). */
+  claimService: ClaimService;
 }
 
 function conversationRoom(conversationId: string): string {
@@ -41,8 +47,9 @@ function conversationRoom(conversationId: string): string {
  * Creates the chat-service Socket.IO server (architecture.md §chat-service):
  * websocket-only transport (connection affinity, invariant 13), the Redis adapter
  * for cross-instance fan-out (invariant 9), handshake auth, and the realtime base —
- * conversation-room join (tenant-scoped), typing relay, and presence. Message relay,
- * atomic claim, and handback land in units 19/20.
+ * conversation-room join (tenant-scoped), typing relay, presence, and the atomic
+ * claim (unit 19: CAS + cross-instance abort + state_changed broadcast). Message relay
+ * and handback land in unit 20.
  */
 export function createSocketServer(deps: SocketServerDeps): ChatServer {
   const io: ChatServer = new Server(deps.httpServer, {
@@ -106,6 +113,54 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
       })().catch((err: unknown) => {
         deps.logger.error({ err }, 'conversation join failed');
         ack?.({ ok: false, error: 'internal' });
+      });
+    });
+
+    socket.on(CHAT_EVENTS.CLAIM, (raw: unknown, ack?: (res: ClaimResult) => void) => {
+      void (async () => {
+        // Only agents claim; a customer socket never reaches the claim CAS. NOT_FOUND
+        // rather than a distinct code avoids leaking conversation existence.
+        if (identity.kind !== 'AGENT') return ack?.({ ok: false, reason: 'NOT_FOUND' });
+
+        const parsed = claimRequestSchema.safeParse(raw);
+        if (!parsed.success) return ack?.({ ok: false, reason: 'INVALID_STATE' });
+        const { conversationId } = parsed.data;
+
+        // Tenant guard before the CAS: the conversation must belong to the agent's org
+        // (invariant 1). A miss is NOT_FOUND — the CAS itself is also org-scoped.
+        const conversation = await getConversationForOrg(
+          deps.db,
+          conversationId,
+          identity.organizationId,
+        );
+        if (!conversation) return ack?.({ ok: false, reason: 'NOT_FOUND' });
+
+        const result = await deps.claimService.claim({
+          organizationId: identity.organizationId,
+          agentId: identity.agentId,
+          conversationId,
+        });
+
+        if (result.ok) {
+          // Join the claiming agent to the room and announce the new state to everyone
+          // watching it (other agents' dashboards). The customer's transport switch is
+          // signaled separately on the ai-service SSE bus (unit 20).
+          const room = conversationRoom(conversationId);
+          await socket.join(room);
+          io.to(room).emit(
+            CHAT_EVENTS.STATE_CHANGED,
+            stateChangedEventSchema.parse({
+              type: 'state_changed',
+              conversationId,
+              state: result.state,
+              trigger: null,
+            }),
+          );
+        }
+        ack?.(result);
+      })().catch((err: unknown) => {
+        deps.logger.error({ err }, 'conversation claim failed');
+        ack?.({ ok: false, reason: 'INVALID_STATE' });
       });
     });
 

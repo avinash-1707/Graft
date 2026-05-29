@@ -3,7 +3,9 @@ import { createDb } from '@graft/db';
 import { createLogger, createMetrics, type Tracing } from '@graft/observability';
 import { Redis } from 'ioredis';
 import { buildApp } from './app.js';
+import { ClaimService } from './claim/service.js';
 import type { ChatServiceEnv } from './env.js';
+import { createAiAbortPublisher } from './realtime/ai-bus.js';
 import { createSocketServer } from './realtime/io.js';
 import { SERVICE_NAME } from './telemetry.js';
 
@@ -38,6 +40,12 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
   // Redis blip degrades fan-out rather than crashing the service.
   pub.on('error', (err) => logger.error({ err }, 'socket.io adapter redis error (pub)'));
   sub.on('error', (err) => logger.error({ err }, 'socket.io adapter redis error (sub)'));
+
+  // Reuse the adapter's publisher connection to also emit takeover aborts onto
+  // ai-service's realtime bus (a separate channel; independent of the adapter's own).
+  const abortPublisher = createAiAbortPublisher(pub);
+  const claimService = new ClaimService({ db, metrics, abortPublisher, logger });
+
   const io = createSocketServer({
     httpServer: app.server,
     db,
@@ -47,6 +55,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     serviceName,
     pub,
     sub,
+    claimService,
   });
 
   await app.listen({ host: env.HOST, port: env.PORT });
