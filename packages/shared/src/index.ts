@@ -29,6 +29,7 @@ export * from './contracts/ai-settings.js';
 export * from './contracts/ingestion.js';
 export * from './contracts/analysis.js';
 export * from './contracts/realtime.js';
+export * from './contracts/chat.js';
 export * from './contracts/widget-config.js';
 
 export * from './constants.js';
