@@ -22,5 +22,14 @@
     "@graft/eslint-config": "workspace:*",
     "@graft/tsconfig": "workspace:*",
     "typescript": "5.7.3"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "3.0.80",
+    "@ai-sdk/openai": "3.0.66",
+    "@graft/db": "workspace:*",
+    "@graft/shared": "workspace:*",
+    "ai": "6.0.193",
+    "drizzle-orm": "0.45.2",
+    "zod": "4.4.3"
   }
 }
