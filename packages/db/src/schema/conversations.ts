@@ -2,7 +2,7 @@ import { pgTable, uuid, integer, timestamp, index } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations.js';
 import { sessions } from './sessions.js';
 import { users } from './users.js';
-import { conversationStatePgEnum } from './enums.js';
+import { conversationStatePgEnum, escalationTriggerPgEnum } from './enums.js';
 
 export const conversations = pgTable(
   'conversations',
@@ -16,6 +16,7 @@ export const conversations = pgTable(
       .references(() => sessions.id, { onDelete: 'cascade' }),
     state: conversationStatePgEnum('state').notNull().default('AI_ACTIVE'),
     assignedAgentId: uuid('assigned_agent_id').references(() => users.id, { onDelete: 'set null' }),
+    escalationTrigger: escalationTriggerPgEnum('escalation_trigger'),
     humanRequestCount: integer('human_request_count').notNull().default(0),
     lastSequence: integer('last_sequence').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

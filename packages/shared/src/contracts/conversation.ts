@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { conversationStateSchema } from '../enums/conversation-state.js';
+import { escalationTriggerSchema } from '../enums/escalation-trigger.js';
 import {
   agentIdSchema,
   conversationIdSchema,
@@ -13,6 +14,8 @@ export const conversationSchema = z.object({
   sessionId: sessionIdSchema,
   state: conversationStateSchema,
   assignedAgentId: agentIdSchema.nullable(),
+  /** Reason the conversation moved to ESCALATION_PENDING; null while AI_ACTIVE. */
+  escalationTrigger: escalationTriggerSchema.nullable(),
   lastSequence: z.int().nonnegative(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),

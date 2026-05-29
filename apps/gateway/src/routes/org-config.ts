@@ -60,10 +60,12 @@ export const orgConfigRoutes: FastifyPluginAsync<OrgConfigRouteOptions> = async 
     return {
       thirdHumanRequestEnabled: row.thirdHumanRequestEnabled,
       humanRequestCountToEscalate: row.humanRequestCountToEscalate,
+      humanRequestConfidenceThreshold: row.humanRequestConfidenceThreshold,
       weakGroundingEnabled: row.weakGroundingEnabled,
       weakGroundingThreshold: row.weakGroundingThreshold,
       modelInvokedEnabled: row.modelInvokedEnabled,
       negativeSentimentEnabled: row.negativeSentimentEnabled,
+      negativeSentimentThreshold: row.negativeSentimentThreshold,
       providerFailureEnabled: row.providerFailureEnabled,
     };
   });

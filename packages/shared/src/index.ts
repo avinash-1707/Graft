@@ -27,6 +27,7 @@ export * from './contracts/organization.js';
 export * from './contracts/ai-credential.js';
 export * from './contracts/ai-settings.js';
 export * from './contracts/ingestion.js';
+export * from './contracts/analysis.js';
 export * from './contracts/widget-config.js';
 
 export * from './constants.js';

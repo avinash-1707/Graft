@@ -24,6 +24,7 @@ function toConversation(row: ConversationRow): Conversation {
     sessionId: row.sessionId,
     state: row.state,
     assignedAgentId: row.assignedAgentId,
+    escalationTrigger: row.escalationTrigger,
     lastSequence: row.lastSequence,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

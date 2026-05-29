@@ -6,6 +6,8 @@ import { AnswerService } from './ai/answer-service.js';
 import { buildApp } from './app.js';
 import { ConversationService } from './conversation/service.js';
 import type { AiServiceEnv } from './env.js';
+import { EscalationService } from './escalation/service.js';
+import { createAnalysisQueue } from './queue/analysis-queue.js';
 import { SERVICE_NAME } from './telemetry.js';
 
 export interface StartOptions {
@@ -30,11 +32,16 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     keyBase64: env.AI_KEY_ENCRYPTION_KEY,
     keyId: env.AI_KEY_ENCRYPTION_KEY_ID,
   });
+  const escalation = new EscalationService(db, metrics);
+  const analysisQueue = createAnalysisQueue(env);
   const answerService = new AnswerService({
     db,
     encryptor,
     conversations,
+    escalation,
+    analysisQueue,
     topK: env.RETRIEVAL_TOP_K,
+    analysisWaitTimeoutMs: env.ANALYSIS_WAIT_TIMEOUT_MS,
   });
   const jwtConfig: JwtVerifyConfig = { secret: env.JWT_SECRET, issuer: env.JWT_ISSUER };
 
@@ -67,6 +74,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     void (async () => {
       try {
         await app.close();
+        await analysisQueue.close();
         await closeDb();
         await tracing.shutdown();
         logger.info('shutdown complete');

@@ -15,6 +15,13 @@ export const aiServiceEnvSchema = observabilityEnvSchema.extend({
   // --- Database ---
   DATABASE_URL: z.string().min(1),
 
+  // --- Redis / BullMQ (non-streamed analysis queue) ---
+  REDIS_URL: z.string().min(1),
+  /** Worker concurrency for the analysis (classifier) queue. */
+  ANALYSIS_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(100).default(5),
+  /** How long a turn handler waits for the analysis result before giving up the live emit. */
+  ANALYSIS_WAIT_TIMEOUT_MS: z.coerce.number().int().positive().default(12_000),
+
   // --- JWT verification (same secret/issuer the gateway signs with) ---
   JWT_SECRET: z.string().min(32),
   JWT_ISSUER: z.string().min(1).default('graft-gateway'),

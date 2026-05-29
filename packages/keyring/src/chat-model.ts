@@ -18,6 +18,12 @@ export interface ResolvedChatModel {
   provider: ChatProvider;
   /** Resolved model id (for AiInference accounting). */
   modelId: string;
+  /**
+   * Decrypted tenant key for the chat provider. Reused in-memory by ai-service for
+   * the non-streamed turn classifier (same key as the answer) — never logged or
+   * returned to a client.
+   */
+  apiKey: string;
 }
 
 /**
@@ -43,6 +49,7 @@ export async function resolveChatModel(
     );
   }
 
-  const model = createChatModel({ provider: chatProvider, apiKey: decryptApiKey(encryptor, secret) });
-  return { model, provider: chatProvider, modelId: DEFAULT_CHAT_MODELS[chatProvider] };
+  const apiKey = decryptApiKey(encryptor, secret);
+  const model = createChatModel({ provider: chatProvider, apiKey });
+  return { model, provider: chatProvider, modelId: DEFAULT_CHAT_MODELS[chatProvider], apiKey };
 }

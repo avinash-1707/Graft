@@ -1,6 +1,7 @@
 import {
   assemblePrompt,
   chatTools,
+  ESCALATE_TOOL_NAME,
   evaluateGrounding,
   GenerationCancelledError,
   streamAnswer,
@@ -20,15 +21,35 @@ import {
   ConversationState,
   DEFAULT_ESCALATION_CONFIG,
   DEFAULT_WIDGET_BOT_NAME,
+  EscalationTrigger,
   messageIdSchema,
   MessageRole,
+  type AiAnalysisResult,
   type AiInferenceStatus,
   type Conversation,
+  type ConversationId,
+  type EscalationTrigger as EscalationTriggerType,
   type ServerEvent,
 } from '@graft/shared';
 import type { FastifyBaseLogger } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import type { ConversationService } from '../conversation/service.js';
+import type { EscalationService } from '../escalation/service.js';
+import type { AnalysisQueue } from '../queue/analysis-queue.js';
+
+/** Emits the live ESCALATION_PENDING `state_changed` event on the customer's SSE. */
+function emitStateChanged(
+  emit: (event: ServerEvent) => void,
+  conversationId: ConversationId,
+  trigger: EscalationTriggerType,
+): void {
+  emit({
+    type: 'state_changed',
+    conversationId,
+    state: ConversationState.ESCALATION_PENDING,
+    trigger,
+  });
+}
 
 export interface StreamTurnParams {
   organizationId: string;
@@ -46,32 +67,46 @@ export interface AnswerServiceDeps {
   db: Database;
   encryptor: Encryptor;
   conversations: ConversationService;
+  escalation: EscalationService;
+  analysisQueue: AnalysisQueue;
   /** Max KB chunks retrieved per turn. */
   topK: number;
+  /** How long to wait for the analysis result before giving up the live emit. */
+  analysisWaitTimeoutMs: number;
 }
 
 /**
- * Orchestrates one AI_ACTIVE customer turn (architecture.md §RAG): resume the
- * conversation, persist the customer message (idempotent), embed the query, retrieve
- * tenant-scoped KB chunks, assemble the grounded prompt, stream the answer to the
- * widget via SSE, then persist the AI message + record the inference metric.
+ * Orchestrates one AI_ACTIVE customer turn (architecture.md §RAG + §Escalation):
+ * resume the conversation, persist the customer message (idempotent), embed the
+ * query, retrieve tenant-scoped KB chunks, assemble the grounded prompt, stream the
+ * answer to the widget via SSE, persist it, and evaluate the five escalation
+ * triggers.
  *
  * The live answer streams directly (never queued) so it stays low-latency and
- * cancellable. Escalation STATE transitions (weak grounding, sentiment, model-
- * invoked, provider-failure) are evaluated in unit 17; this unit only declines (an
- * empty/"I don't have that" answer) when retrieval is not grounded.
+ * cancellable. The non-streamed turn classifier (sentiment + human-request) runs on
+ * the BullMQ analysis queue (retry + parallel) concurrently with the answer; the
+ * worker owns the durable escalation transition for those triggers, and this handler
+ * does a best-effort live `state_changed` emit on the SSE it holds (B-hybrid).
+ * Inline triggers (weak grounding pre-gen, provider-failure, model-invoked) are
+ * applied directly here. Cross-instance agent-takeover abort lands with chat-service.
  */
 export class AnswerService {
   private readonly db: Database;
   private readonly encryptor: Encryptor;
   private readonly conversations: ConversationService;
+  private readonly escalation: EscalationService;
+  private readonly analysisQueue: AnalysisQueue;
   private readonly topK: number;
+  private readonly analysisWaitTimeoutMs: number;
 
   constructor(deps: AnswerServiceDeps) {
     this.db = deps.db;
     this.encryptor = deps.encryptor;
     this.conversations = deps.conversations;
+    this.escalation = deps.escalation;
+    this.analysisQueue = deps.analysisQueue;
     this.topK = deps.topK;
+    this.analysisWaitTimeoutMs = deps.analysisWaitTimeoutMs;
   }
 
   async streamTurn(params: StreamTurnParams): Promise<void> {
@@ -113,7 +148,28 @@ export class AnswerService {
       return;
     }
 
-    await this.generateAnswer({ organizationId, conversation, content, history, signal, emit, log });
+    await this.generateAnswer({
+      organizationId,
+      conversation,
+      content,
+      history,
+      customerMessageId: customerMessage.id,
+      signal,
+      emit,
+      log,
+    });
+  }
+
+  /** Performs an inline escalation transition and the live `state_changed` emit. */
+  private async escalateAndEmit(
+    organizationId: string,
+    conversationId: ConversationId,
+    trigger: EscalationTriggerType,
+    emit: (event: ServerEvent) => void,
+  ): Promise<{ transitioned: boolean }> {
+    const result = await this.escalation.escalate({ organizationId, conversationId, trigger });
+    if (result.transitioned) emitStateChanged(emit, conversationId, trigger);
+    return result;
   }
 
   private async generateAnswer(args: {
@@ -121,40 +177,49 @@ export class AnswerService {
     conversation: Conversation;
     content: string;
     history: PromptMessage[];
+    customerMessageId: string;
     signal: AbortSignal;
     emit: (event: ServerEvent) => void;
     log: FastifyBaseLogger;
   }): Promise<void> {
-    const { organizationId, conversation, content, history, signal, emit, log } = args;
+    const { organizationId, conversation, content, history, customerMessageId, signal, emit, log } =
+      args;
     const startedAt = Date.now();
+    const cfg = (await getEscalationConfig(this.db, organizationId)) ?? DEFAULT_ESCALATION_CONFIG;
 
-    // --- Retrieve (embed query → tenant-scoped ANN). A provider/retrieval failure
-    // here ends the turn; unit 17 turns it into a graceful auto-escalation. ---
+    // --- Retrieve (embed query → tenant-scoped ANN). Embedding/retrieval provider
+    // failure → PROVIDER_FAILURE auto-escalation (no chat inference happened). ---
     let chunks: RetrievedChunk[];
     try {
       const embedder = await resolveEmbedder(this.db, this.encryptor, organizationId);
       const queryEmbedding = await embedder.embedQuery(content);
-      chunks = await retrieveChunks(this.db, {
-        organizationId,
-        queryEmbedding,
-        topK: this.topK,
-      });
+      chunks = await retrieveChunks(this.db, { organizationId, queryEmbedding, topK: this.topK });
     } catch (err) {
-      log.error(
-        { err, organizationId, conversationId: conversation.id },
-        'retrieval failed; ending turn (auto-escalation lands in unit 17)',
-      );
+      log.error({ err, organizationId, conversationId: conversation.id }, 'retrieval failed');
+      if (cfg.providerFailureEnabled) {
+        await this.escalateAndEmit(
+          organizationId,
+          conversation.id,
+          EscalationTrigger.PROVIDER_FAILURE,
+          emit,
+        );
+      }
       return;
     }
 
-    const escalationConfig = await getEscalationConfig(this.db, organizationId);
-    const threshold =
-      escalationConfig?.weakGroundingThreshold ?? DEFAULT_ESCALATION_CONFIG.weakGroundingThreshold;
-    const grounding = evaluateGrounding(chunks, threshold);
+    const grounding = evaluateGrounding(chunks, cfg.weakGroundingThreshold);
 
-    // Weak grounding (no relevant chunk): pass NO context so the model declines /
-    // escalates rather than answering from low-relevance material. The escalation
-    // state transition itself is unit 17.
+    // Weak grounding is the primary "AI can't answer" signal: escalate, no LLM answer.
+    if (!grounding.grounded && cfg.weakGroundingEnabled) {
+      await this.escalateAndEmit(
+        organizationId,
+        conversation.id,
+        EscalationTrigger.WEAK_GROUNDING,
+        emit,
+      );
+      return;
+    }
+    // Trigger disabled → fall back to a grounded-but-empty decline (unit-16 behavior).
     const groundedChunks = grounding.grounded ? chunks : [];
 
     const widgetConfig = await getWidgetConfig(this.db, organizationId);
@@ -177,6 +242,21 @@ export class AnswerService {
       return;
     }
 
+    // Kick off the non-streamed classifier on the queue (retry + parallel), concurrent
+    // with the stream. Skipped when no classifier-driven trigger is enabled.
+    const classifierEnabled = cfg.thirdHumanRequestEnabled || cfg.negativeSentimentEnabled;
+    const analysisPromise: Promise<AiAnalysisResult | undefined> = classifierEnabled
+      ? this.analysisQueue.enqueueAndWait(
+          {
+            organizationId,
+            conversationId: conversation.id,
+            messageId: customerMessageId,
+            text: content,
+          },
+          this.analysisWaitTimeoutMs,
+        )
+      : Promise.resolve(undefined);
+
     // Pre-generate the AI message id so `ai_token` events can reference it before the
     // full message is persisted; the row is later inserted with this exact id.
     const aiMessageId = messageIdSchema.parse(randomUUID());
@@ -196,6 +276,8 @@ export class AnswerService {
       }
       const finishReason = await stream.finishReason;
       const usage = await stream.usage;
+      const toolCalls = await stream.toolCalls;
+      const modelInvoked = toolCalls.some((call) => call.toolName === ESCALATE_TOOL_NAME);
 
       // Empty answer (e.g. the model only called `escalate`): show no bubble.
       let persistedMessageId: string | null = null;
@@ -212,6 +294,26 @@ export class AnswerService {
         persistedMessageId = message.id;
       }
 
+      // Inline model-invoked escalation (handler owns this transition).
+      let trigger: EscalationTriggerType | null = null;
+      if (modelInvoked && cfg.modelInvokedEnabled) {
+        const { transitioned } = await this.escalateAndEmit(
+          organizationId,
+          conversation.id,
+          EscalationTrigger.MODEL_INVOKED,
+          emit,
+        );
+        if (transitioned) trigger = EscalationTrigger.MODEL_INVOKED;
+      }
+
+      // Classifier-driven escalation: the worker owns the durable transition; we do a
+      // best-effort live emit since we still hold the SSE. Skip if already escalated.
+      const analysis = await analysisPromise;
+      if (trigger === null && analysis?.escalated && analysis.trigger) {
+        emitStateChanged(emit, conversation.id, analysis.trigger);
+        trigger = analysis.trigger;
+      }
+
       await this.recordInference({
         organizationId,
         conversationId: conversation.id,
@@ -224,9 +326,13 @@ export class AnswerService {
         finishReason,
         grounding,
         chunkCount: chunks.length,
+        escalated: trigger !== null,
+        escalationTrigger: trigger,
       });
     } catch (err) {
+      void analysisPromise; // resolves to undefined on its own; never rejects
       const cancelled = err instanceof GenerationCancelledError;
+      let trigger: EscalationTriggerType | null = null;
       if (cancelled) {
         // Invariant 12: tokens after cancellation are discarded — persist nothing.
         log.info(
@@ -235,6 +341,15 @@ export class AnswerService {
         );
       } else {
         log.error({ err, organizationId, conversationId: conversation.id }, 'generation failed');
+        if (cfg.providerFailureEnabled) {
+          const { transitioned } = await this.escalateAndEmit(
+            organizationId,
+            conversation.id,
+            EscalationTrigger.PROVIDER_FAILURE,
+            emit,
+          );
+          if (transitioned) trigger = EscalationTrigger.PROVIDER_FAILURE;
+        }
       }
       await this.recordInference({
         organizationId,
@@ -249,6 +364,8 @@ export class AnswerService {
         grounding,
         chunkCount: chunks.length,
         errorCode: cancelled ? null : 'PROVIDER_FAILURE',
+        escalated: trigger !== null,
+        escalationTrigger: trigger,
       });
     }
   }
@@ -267,6 +384,8 @@ export class AnswerService {
     grounding: { topSimilarity: number };
     chunkCount: number;
     errorCode?: string | null;
+    escalated: boolean;
+    escalationTrigger: EscalationTriggerType | null;
   }): Promise<void> {
     const record = aiInferenceInsertSchema.parse({
       organizationId: args.organizationId,
@@ -282,9 +401,8 @@ export class AnswerService {
       errorCode: args.errorCode ?? null,
       groundingScore: args.grounding.topSimilarity,
       retrievedChunksCount: args.chunkCount,
-      // Escalation evaluation + state transitions land in unit 17.
-      escalated: false,
-      escalationTrigger: null,
+      escalated: args.escalated,
+      escalationTrigger: args.escalationTrigger,
     });
     await insertAiInference(this.db, record);
   }

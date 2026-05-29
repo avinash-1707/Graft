@@ -1,4 +1,5 @@
-import { and, desc, eq, ne } from 'drizzle-orm';
+import { and, desc, eq, ne, sql } from 'drizzle-orm';
+import type { EscalationTrigger } from '@graft/shared';
 import type { Database } from '../client.js';
 import { conversations } from '../schema/conversations.js';
 
@@ -51,4 +52,54 @@ export async function findActiveConversationBySession(
     ),
     orderBy: desc(conversations.createdAt),
   });
+}
+
+/**
+ * Atomically increments the conversation's running human-request count and returns
+ * the new value (tenant-scoped). Used by the escalation engine to detect the Nth
+ * explicit "talk to a human" request across turns.
+ */
+export async function incrementHumanRequestCount(
+  db: Database,
+  conversationId: string,
+  organizationId: string,
+): Promise<number | undefined> {
+  const [row] = await db
+    .update(conversations)
+    .set({ humanRequestCount: sql`${conversations.humanRequestCount} + 1`, updatedAt: new Date() })
+    .where(
+      and(
+        eq(conversations.id, conversationId),
+        eq(conversations.organizationId, organizationId),
+      ),
+    )
+    .returning({ humanRequestCount: conversations.humanRequestCount });
+  return row?.humanRequestCount;
+}
+
+/**
+ * Atomic compare-and-set escalation transition (invariant 2): flips AI_ACTIVE →
+ * ESCALATION_PENDING and records the trigger, only if the conversation is still
+ * AI_ACTIVE. Returns the updated row, or undefined when it was no longer AI_ACTIVE
+ * (an agent already took over, or another path already escalated) — so concurrent
+ * escalations and a takeover can never both win. Tenant-scoped.
+ */
+export async function transitionToEscalationPending(
+  db: Database,
+  conversationId: string,
+  organizationId: string,
+  trigger: EscalationTrigger,
+): Promise<ConversationRow | undefined> {
+  const [row] = await db
+    .update(conversations)
+    .set({ state: 'ESCALATION_PENDING', escalationTrigger: trigger, updatedAt: new Date() })
+    .where(
+      and(
+        eq(conversations.id, conversationId),
+        eq(conversations.organizationId, organizationId),
+        eq(conversations.state, 'AI_ACTIVE'),
+      ),
+    )
+    .returning();
+  return row;
 }
