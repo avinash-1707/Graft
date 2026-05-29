@@ -22,3 +22,6 @@ export type AgentId = z.infer<typeof agentIdSchema>;
 
 export const noteIdSchema = uuidSchema.brand<'NoteId'>();
 export type NoteId = z.infer<typeof noteIdSchema>;
+
+export const kbDocumentIdSchema = uuidSchema.brand<'KbDocumentId'>();
+export type KbDocumentId = z.infer<typeof kbDocumentIdSchema>;

@@ -15,5 +15,20 @@
     "@graft/eslint-config": "workspace:*",
     "@graft/tsconfig": "workspace:*",
     "typescript": "5.7.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1056.0",
+    "@fastify/multipart": "10.0.0",
+    "@graft/db": "workspace:*",
+    "@graft/observability": "workspace:*",
+    "@graft/shared": "workspace:*",
+    "@opentelemetry/instrumentation-fastify": "0.57.0",
+    "@opentelemetry/instrumentation-http": "0.218.0",
+    "bullmq": "5.77.6",
+    "fastify": "5.8.5",
+    "fastify-plugin": "5.1.0",
+    "ioredis": "5.10.1",
+    "jose": "6.2.3",
+    "zod": "4.4.3"
   }
 }

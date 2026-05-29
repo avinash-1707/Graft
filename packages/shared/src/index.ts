@@ -5,6 +5,8 @@ export * from './enums/ai-provider.js';
 export * from './enums/embedding-provider.js';
 export * from './enums/ai-inference-status.js';
 export * from './enums/user-role.js';
+export * from './enums/kb-document-type.js';
+export * from './enums/kb-document-status.js';
 export * from './enums/auth-code-purpose.js';
 export * from './enums/widget-preset.js';
 export * from './enums/widget-launcher-position.js';
@@ -23,6 +25,7 @@ export * from './contracts/agent.js';
 export * from './contracts/widget.js';
 export * from './contracts/organization.js';
 export * from './contracts/ai-credential.js';
+export * from './contracts/ingestion.js';
 export * from './contracts/widget-config.js';
 
 export * from './constants.js';

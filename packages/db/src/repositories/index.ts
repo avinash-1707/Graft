@@ -7,3 +7,4 @@ export * from './sessions.js';
 export * from './ai-provider-credentials.js';
 export * from './widget-configs.js';
 export * from './escalation-configs.js';
+export * from './kb-documents.js';
