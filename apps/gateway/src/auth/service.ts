@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import {
   authUserSchema,
   type AuthCodePurpose,
@@ -30,6 +29,7 @@ import { signAccessToken, type JwtConfig } from './jwt.js';
 import type { Mailer } from './mailer.js';
 import { generateOtp, hashOtp, verifyOtp } from './otp.js';
 import { hashPassword, verifyPassword } from './password.js';
+import { generateEmbedToken } from '../org/embed-token.js';
 
 export interface AuthServiceDeps {
   db: Database;
@@ -66,7 +66,7 @@ export class AuthService {
     if (existing) throw AuthErrors.emailInUse();
 
     const passwordHash = await hashPassword(input.password);
-    const embedToken = randomBytes(24).toString('base64url');
+    const embedToken = generateEmbedToken();
     const { user } = await createOrganizationWithOwner(this.deps.db, {
       organizationName: input.organizationName,
       embedToken,

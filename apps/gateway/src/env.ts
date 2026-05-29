@@ -38,6 +38,11 @@ export const gatewayEnvSchema = observabilityEnvSchema.extend({
   OTP_TTL_MS: z.coerce.number().int().positive().default(600_000),
   OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
 
+  // --- Public widget endpoints ---
+  /** Max widget requests per window, keyed per (embed token, session). */
+  WIDGET_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(30),
+  WIDGET_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
+
   // --- Email (nodemailer) ---
   APP_NAME: z.string().min(1).default('Graft'),
   EMAIL_FROM: z.string().min(1).default('Graft <no-reply@graft.local>'),

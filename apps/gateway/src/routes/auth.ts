@@ -6,36 +6,13 @@ import {
   signupRequestSchema,
   verifyEmailRequestSchema,
 } from '@graft/shared';
-import type { FastifyPluginAsync, FastifyReply } from 'fastify';
-import type { z } from 'zod';
+import type { FastifyPluginAsync } from 'fastify';
 import { AuthErrors } from '../auth/errors.js';
 import type { AuthService } from '../auth/service.js';
+import { parseOr400 } from '../http/validate.js';
 
 interface AuthRouteOptions {
   authService: AuthService;
-}
-
-/** Parses a request body; on failure sends a 400 in the stable error shape and returns undefined. */
-function parseOr400<T extends z.ZodType>(
-  schema: T,
-  body: unknown,
-  reply: FastifyReply,
-): z.infer<T> | undefined {
-  const result = schema.safeParse(body);
-  if (!result.success) {
-    reply.code(400).send({
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid request.',
-        details: result.error.issues.map((i) => ({
-          path: i.path.join('.'),
-          message: i.message,
-        })),
-      },
-    });
-    return undefined;
-  }
-  return result.data;
 }
 
 const GENERIC_OK = { message: 'If an account exists, an email has been sent.' };

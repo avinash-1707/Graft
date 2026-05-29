@@ -9,3 +9,8 @@ export const DEFAULT_GROUNDING_THRESHOLD = 0.7 as const;
 export const DEFAULT_HUMAN_REQUEST_COUNT_TO_ESCALATE = 3 as const;
 
 export const SSE_EVENT_NAME = 'graft' as const;
+
+/** Header carrying the per-org embed token on public widget requests. */
+export const EMBED_TOKEN_HEADER = 'x-graft-embed-token' as const;
+/** Header carrying the widget's localStorage session UUID on public widget requests. */
+export const SESSION_HEADER = 'x-graft-session-id' as const;

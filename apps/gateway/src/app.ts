@@ -1,4 +1,5 @@
 import rateLimit from '@fastify/rate-limit';
+import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
 import Fastify, {
   type FastifyBaseLogger,
@@ -10,15 +11,19 @@ import type { AuthService } from './auth/service.js';
 import type { GatewayEnv } from './env.js';
 import authPlugin from './plugins/auth.js';
 import metricsPlugin from './plugins/metrics.js';
+import widgetAuthPlugin from './plugins/widget-auth.js';
 import { authRoutes } from './routes/auth.js';
 import { downstreamRoutes } from './routes/downstream.js';
 import { healthRoutes } from './routes/health.js';
 import { metricsRoutes } from './routes/metrics.js';
+import { orgAdminRoutes } from './routes/org-admin.js';
+import { widgetRoutes } from './routes/widget.js';
 
 export interface BuildAppOptions {
   env: GatewayEnv;
   logger: Logger;
   metrics: Metrics;
+  db: Database;
   authService: AuthService;
   jwtConfig: JwtConfig;
   /** Readiness gate; flips to false during graceful shutdown. */
@@ -31,7 +36,7 @@ export interface BuildAppOptions {
  * builder: no listening, no signal handling — the caller owns the lifecycle.
  */
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
-  const { env, logger, metrics, authService, jwtConfig, isReady } = opts;
+  const { env, logger, metrics, db, authService, jwtConfig, isReady } = opts;
 
   // Widen to FastifyBaseLogger so the instance keeps Fastify's default logger
   // generic (the concrete pino type would diverge under exactOptionalPropertyTypes).
@@ -77,10 +82,13 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   });
 
   await app.register(authPlugin, { jwtConfig });
+  await app.register(widgetAuthPlugin, { db });
 
   await app.register(healthRoutes, { isReady });
   await app.register(metricsRoutes, { metrics });
   await app.register(authRoutes, { authService });
+  await app.register(orgAdminRoutes, { db });
+  await app.register(widgetRoutes, { db, env });
   await app.register(downstreamRoutes);
 
   return app;

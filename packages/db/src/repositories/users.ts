@@ -2,9 +2,9 @@ import { eq } from 'drizzle-orm';
 import type { Database } from '../client.js';
 import { organizations } from '../schema/organizations.js';
 import { users } from '../schema/users.js';
+import type { OrganizationRow } from './organizations.js';
 
 export type UserRow = typeof users.$inferSelect;
-export type OrganizationRow = typeof organizations.$inferSelect;
 
 export interface CreateOrgWithOwnerInput {
   organizationName: string;

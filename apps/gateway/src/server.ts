@@ -36,7 +36,15 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
   };
 
   let ready = true;
-  const app = await buildApp({ env, logger, metrics, authService, jwtConfig, isReady: () => ready });
+  const app = await buildApp({
+    env,
+    logger,
+    metrics,
+    db,
+    authService,
+    jwtConfig,
+    isReady: () => ready,
+  });
 
   await app.listen({ host: env.HOST, port: env.PORT });
 

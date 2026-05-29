@@ -25,3 +25,11 @@ export const AuthErrors = {
   unauthorized: () => new AuthError('UNAUTHORIZED', 401, 'Authentication required.'),
   forbidden: () => new AuthError('FORBIDDEN', 403, 'You do not have access to this resource.'),
 } as const;
+
+/** Public-widget validation errors. Reuse {@link AuthError}'s code+status contract. */
+export const WidgetErrors = {
+  invalidEmbedToken: () =>
+    new AuthError('INVALID_EMBED_TOKEN', 401, 'Invalid or missing embed token.'),
+  originNotAllowed: () =>
+    new AuthError('ORIGIN_NOT_ALLOWED', 403, 'This origin is not allowed for this widget.'),
+} as const;
