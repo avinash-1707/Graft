@@ -31,7 +31,9 @@ export type SendMessageResult =
   | { ok: true; message: Message; deduped: boolean; switch?: SwitchEffect }
   | { ok: false; reason: ChatActionError };
 
-export type HandbackResult = { ok: true; switch: SwitchEffect } | { ok: false; reason: ChatActionError };
+export type HandbackResult =
+  | { ok: true; switch: SwitchEffect }
+  | { ok: false; reason: ChatActionError };
 
 export interface MessagingServiceDeps {
   db: Database;
@@ -146,7 +148,8 @@ export class MessagingService {
     const conv = await getConversationForOrg(db, input.conversationId, input.organizationId);
     if (!conv) return { ok: false, reason: 'NOT_FOUND' };
     if (conv.assignedAgentId !== input.agentId) return { ok: false, reason: 'FORBIDDEN' };
-    if (conv.state !== ConversationState.HUMAN_ACTIVE) return { ok: false, reason: 'INVALID_STATE' };
+    if (conv.state !== ConversationState.HUMAN_ACTIVE)
+      return { ok: false, reason: 'INVALID_STATE' };
 
     const row = await handbackToAi(db, input.conversationId, input.organizationId, input.agentId);
     if (!row) return { ok: false, reason: 'INVALID_STATE' };

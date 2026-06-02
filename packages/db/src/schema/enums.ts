@@ -16,8 +16,7 @@ import {
   type UserRole,
 } from '@graft/shared';
 
-const asTuple = <T extends string>(arr: readonly T[]): [T, ...T[]] =>
-  arr as unknown as [T, ...T[]];
+const asTuple = <T extends string>(arr: readonly T[]): [T, ...T[]] => arr as unknown as [T, ...T[]];
 
 export const conversationStatePgEnum = pgEnum(
   'conversation_state',

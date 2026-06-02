@@ -10,8 +10,7 @@ const MIME_MAP: Record<string, DetectedType> = {
   'application/pdf': { fileType: 'PDF', contentType: 'application/pdf' },
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {
     fileType: 'DOCX',
-    contentType:
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   },
   'text/plain': { fileType: 'TEXT', contentType: 'text/plain' },
   'text/markdown': { fileType: 'TEXT', contentType: 'text/plain' },

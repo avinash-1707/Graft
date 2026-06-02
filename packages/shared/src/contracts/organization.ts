@@ -14,8 +14,7 @@ export const originSchema = z
     try {
       const u = new URL(value);
       return (
-        (u.protocol === 'http:' || u.protocol === 'https:') &&
-        `${u.protocol}//${u.host}` === value
+        (u.protocol === 'http:' || u.protocol === 'https:') && `${u.protocol}//${u.host}` === value
       );
     } catch {
       return false;

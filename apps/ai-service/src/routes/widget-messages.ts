@@ -56,7 +56,10 @@ export const widgetMessageRoutes: FastifyPluginAsync<WidgetMessageRouteOptions> 
     const session = await findSessionForOrg(db, sessionId, organizationId);
     if (!session) {
       return reply.code(403).send({
-        error: { code: 'SESSION_NOT_FOUND', message: 'Session does not belong to this organization.' },
+        error: {
+          code: 'SESSION_NOT_FOUND',
+          message: 'Session does not belong to this organization.',
+        },
       });
     }
     await touchSession(db, session.id);

@@ -30,7 +30,9 @@ export interface ProcessorDeps {
  */
 export function createProcessor(deps: ProcessorDeps) {
   return async function process(job: Job<KbIngestionJob>): Promise<void> {
-    const { documentId, organizationId, objectKey, fileType } = kbIngestionJobSchema.parse(job.data);
+    const { documentId, organizationId, objectKey, fileType } = kbIngestionJobSchema.parse(
+      job.data,
+    );
 
     const doc = await getKbDocument(deps.db, documentId);
     if (!doc) {
@@ -67,7 +69,9 @@ export function createProcessor(deps: ProcessorDeps) {
     await markKbDocumentReady(deps.db, documentId);
     await deps.storage
       .deleteObject(objectKey)
-      .catch((err: unknown) => deps.logger.warn({ err, objectKey }, 'failed to delete staged object'));
+      .catch((err: unknown) =>
+        deps.logger.warn({ err, objectKey }, 'failed to delete staged object'),
+      );
 
     deps.logger.info({ documentId, chunks: chunks.length }, 'document ingested');
   };

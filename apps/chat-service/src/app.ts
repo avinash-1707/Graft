@@ -1,9 +1,5 @@
 import type { Logger, Metrics } from '@graft/observability';
-import Fastify, {
-  type FastifyBaseLogger,
-  type FastifyError,
-  type FastifyInstance,
-} from 'fastify';
+import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
 import metricsPlugin from './plugins/metrics.js';
 import { healthRoutes } from './routes/health.js';
 import { metricsRoutes } from './routes/metrics.js';

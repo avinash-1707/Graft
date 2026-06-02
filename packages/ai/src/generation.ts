@@ -83,7 +83,9 @@ function attemptSignal(
   const timer = setTimeout(() => {
     timeoutController.abort(new Error('provider call timed out'));
   }, timeoutMs);
-  const signals = callerSignal ? [timeoutController.signal, callerSignal] : [timeoutController.signal];
+  const signals = callerSignal
+    ? [timeoutController.signal, callerSignal]
+    : [timeoutController.signal];
   return { signal: AbortSignal.any(signals), cleanup: () => clearTimeout(timer) };
 }
 

@@ -2,11 +2,7 @@ import multipart from '@fastify/multipart';
 import { jwtAuthPlugin, type JwtVerifyConfig } from '@graft/auth';
 import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
-import Fastify, {
-  type FastifyBaseLogger,
-  type FastifyError,
-  type FastifyInstance,
-} from 'fastify';
+import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
 import type { IngestionEnv } from './env.js';
 import metricsPlugin from './plugins/metrics.js';
 import type { IngestionQueue } from './queue/ingestion-queue.js';

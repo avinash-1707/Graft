@@ -10,12 +10,7 @@ import {
   type Database,
   type MessageRow,
 } from '@graft/db';
-import {
-  conversationSchema,
-  messageSchema,
-  type Conversation,
-  type Message,
-} from '@graft/shared';
+import { conversationSchema, messageSchema, type Conversation, type Message } from '@graft/shared';
 
 function toConversation(row: ConversationRow): Conversation {
   return conversationSchema.parse({

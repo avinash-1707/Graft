@@ -57,9 +57,9 @@ export function createEventBus(redisUrl: string, logger: FastifyBaseLogger): Eve
       });
       // Don't block boot on Redis: issue the subscribe and let ioredis (re)subscribe
       // on connect/reconnect. A Redis blip at startup must not stop the server listening.
-      sub.subscribe(AI_REALTIME_CHANNEL).catch((err: unknown) =>
-        logger.error({ err }, 'failed to subscribe to realtime channel'),
-      );
+      sub
+        .subscribe(AI_REALTIME_CHANNEL)
+        .catch((err: unknown) => logger.error({ err }, 'failed to subscribe to realtime channel'));
       return Promise.resolve();
     },
 

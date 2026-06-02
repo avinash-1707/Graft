@@ -74,7 +74,10 @@ export const aiCredentialRoutes: FastifyPluginAsync<AiCredentialRouteOptions> = 
     }
     // Clear any selection that pointed at the now-deleted key.
     const settings = await getAiSettings(db, orgId);
-    if (settings.chatProvider === params.provider || settings.embeddingProvider === params.provider) {
+    if (
+      settings.chatProvider === params.provider ||
+      settings.embeddingProvider === params.provider
+    ) {
       await upsertAiSettings(db, orgId, {
         chatProvider: settings.chatProvider === params.provider ? null : settings.chatProvider,
         embeddingProvider:

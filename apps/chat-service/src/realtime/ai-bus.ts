@@ -21,10 +21,7 @@ export interface AiAbortPublisher {
 export function createAiAbortPublisher(redis: Redis): AiAbortPublisher {
   return {
     async publishAbort(conversationId) {
-      await redis.publish(
-        AI_REALTIME_CHANNEL,
-        JSON.stringify({ kind: 'abort', conversationId }),
-      );
+      await redis.publish(AI_REALTIME_CHANNEL, JSON.stringify({ kind: 'abort', conversationId }));
     },
   };
 }

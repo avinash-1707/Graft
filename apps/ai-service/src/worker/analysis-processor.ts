@@ -1,10 +1,6 @@
 import { classifyTurn } from '@graft/ai';
 import type { Encryptor } from '@graft/crypto';
-import {
-  getEscalationConfig,
-  incrementHumanRequestCount,
-  type Database,
-} from '@graft/db';
+import { getEscalationConfig, incrementHumanRequestCount, type Database } from '@graft/db';
 import { resolveChatModel } from '@graft/keyring';
 import {
   aiAnalysisJobSchema,
@@ -40,7 +36,8 @@ export async function processAnalysisJob(
   job: Job<AiAnalysisJob, AiAnalysisResult>,
 ): Promise<AiAnalysisResult> {
   const data = aiAnalysisJobSchema.parse(job.data);
-  const config = (await getEscalationConfig(deps.db, data.organizationId)) ?? DEFAULT_ESCALATION_CONFIG;
+  const config =
+    (await getEscalationConfig(deps.db, data.organizationId)) ?? DEFAULT_ESCALATION_CONFIG;
 
   // No classifier-driven trigger enabled → skip the LLM call entirely.
   if (!config.thirdHumanRequestEnabled && !config.negativeSentimentEnabled) {
@@ -52,8 +49,15 @@ export async function processAnalysisJob(
 
   let trigger: EscalationTrigger | null = null;
 
-  if (config.thirdHumanRequestEnabled && isHumanRequest(classification, config.humanRequestConfidenceThreshold)) {
-    const newCount = await incrementHumanRequestCount(deps.db, data.conversationId, data.organizationId);
+  if (
+    config.thirdHumanRequestEnabled &&
+    isHumanRequest(classification, config.humanRequestConfidenceThreshold)
+  ) {
+    const newCount = await incrementHumanRequestCount(
+      deps.db,
+      data.conversationId,
+      data.organizationId,
+    );
     if (newCount !== undefined && newCount >= config.humanRequestCountToEscalate) {
       trigger = EscalationTrigger.THIRD_HUMAN_REQUEST;
     }

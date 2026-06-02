@@ -23,9 +23,7 @@ export function Header({
   return (
     <header className="flex items-center justify-between gap-3 border-b border-[var(--graft-border-default)] px-4 py-3">
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-[var(--graft-text-primary)]">
-          {botName}
-        </p>
+        <p className="truncate text-sm font-semibold text-[var(--graft-text-primary)]">{botName}</p>
         <p className="flex items-center gap-1.5 text-xs text-[var(--graft-text-muted)]">
           <span
             className="h-2 w-2 shrink-0 rounded-full"

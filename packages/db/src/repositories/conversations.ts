@@ -68,10 +68,7 @@ export async function incrementHumanRequestCount(
     .update(conversations)
     .set({ humanRequestCount: sql`${conversations.humanRequestCount} + 1`, updatedAt: new Date() })
     .where(
-      and(
-        eq(conversations.id, conversationId),
-        eq(conversations.organizationId, organizationId),
-      ),
+      and(eq(conversations.id, conversationId), eq(conversations.organizationId, organizationId)),
     )
     .returning({ humanRequestCount: conversations.humanRequestCount });
   return row?.humanRequestCount;

@@ -1,21 +1,8 @@
-import {
-  pgTable,
-  uuid,
-  integer,
-  text,
-  boolean,
-  real,
-  timestamp,
-  index,
-} from 'drizzle-orm/pg-core';
+import { pgTable, uuid, integer, text, boolean, real, timestamp, index } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations.js';
 import { conversations } from './conversations.js';
 import { messages } from './messages.js';
-import {
-  aiInferenceStatusPgEnum,
-  aiProviderPgEnum,
-  escalationTriggerPgEnum,
-} from './enums.js';
+import { aiInferenceStatusPgEnum, aiProviderPgEnum, escalationTriggerPgEnum } from './enums.js';
 
 export const aiInferences = pgTable(
   'ai_inferences',

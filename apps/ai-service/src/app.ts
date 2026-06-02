@@ -1,11 +1,7 @@
 import { jwtAuthPlugin, widgetAuthPlugin, type JwtVerifyConfig } from '@graft/auth';
 import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
-import Fastify, {
-  type FastifyBaseLogger,
-  type FastifyError,
-  type FastifyInstance,
-} from 'fastify';
+import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
 import type { AnswerService } from './ai/answer-service.js';
 import type { ConversationService } from './conversation/service.js';
 import type { ConnectionRegistry } from './realtime/connection-registry.js';

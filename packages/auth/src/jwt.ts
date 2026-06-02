@@ -13,7 +13,10 @@ const ALG = 'HS256';
  * returns the typed claims. The gateway is the only signer; internal services only
  * verify. Throws on signature/issuer/expiry/claims failure.
  */
-export async function verifyAccessToken(token: string, config: JwtVerifyConfig): Promise<JwtClaims> {
+export async function verifyAccessToken(
+  token: string,
+  config: JwtVerifyConfig,
+): Promise<JwtClaims> {
   const { payload } = await jwtVerify(token, new TextEncoder().encode(config.secret), {
     issuer: config.issuer,
     algorithms: [ALG],

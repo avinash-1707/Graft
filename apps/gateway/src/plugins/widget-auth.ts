@@ -1,13 +1,5 @@
-import {
-  findOrganizationByEmbedToken,
-  isOriginAllowed,
-  type Database,
-} from '@graft/db';
-import {
-  EMBED_TOKEN_HEADER,
-  organizationIdSchema,
-  type OrganizationId,
-} from '@graft/shared';
+import { findOrganizationByEmbedToken, isOriginAllowed, type Database } from '@graft/db';
+import { EMBED_TOKEN_HEADER, organizationIdSchema, type OrganizationId } from '@graft/shared';
 import type { FastifyPluginAsync, FastifyRequest, preHandlerHookHandler } from 'fastify';
 import fp from 'fastify-plugin';
 import { WidgetErrors } from '../auth/errors.js';

@@ -14,9 +14,7 @@ export function startGatewayTracing(env: GatewayEnv): Tracing {
     serviceName: env.OTEL_SERVICE_NAME ?? SERVICE_NAME,
     serviceVersion: env.OTEL_SERVICE_VERSION,
     env: env.NODE_ENV,
-    ...(env.OTEL_EXPORTER_OTLP_ENDPOINT
-      ? { otlpEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT }
-      : {}),
+    ...(env.OTEL_EXPORTER_OTLP_ENDPOINT ? { otlpEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT } : {}),
     instrumentations: [new HttpInstrumentation(), new FastifyInstrumentation()],
   });
 }

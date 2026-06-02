@@ -58,11 +58,7 @@ export async function markKbDocumentReady(db: Database, id: string): Promise<voi
 }
 
 /** Marks a document FAILED with an error message (e.g. staging or enqueue failure). */
-export async function markKbDocumentFailed(
-  db: Database,
-  id: string,
-  error: string,
-): Promise<void> {
+export async function markKbDocumentFailed(db: Database, id: string, error: string): Promise<void> {
   await db
     .update(kbDocuments)
     .set({ status: 'FAILED', error, processedAt: new Date() })

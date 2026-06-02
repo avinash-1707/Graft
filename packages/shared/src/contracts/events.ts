@@ -2,10 +2,7 @@ import { z } from 'zod';
 import { conversationStateSchema } from '../enums/conversation-state.js';
 import { transportSchema } from '../enums/transport.js';
 import { escalationTriggerSchema } from '../enums/escalation-trigger.js';
-import {
-  conversationIdSchema,
-  messageIdSchema,
-} from './ids.js';
+import { conversationIdSchema, messageIdSchema } from './ids.js';
 import { messageSchema, messageSequenceSchema } from './message.js';
 
 const clientNonceSchema = z.string().min(1).max(128);

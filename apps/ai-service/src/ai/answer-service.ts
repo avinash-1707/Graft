@@ -8,12 +8,7 @@ import {
   type PromptMessage,
 } from '@graft/ai';
 import type { Encryptor } from '@graft/crypto';
-import {
-  getEscalationConfig,
-  getWidgetConfig,
-  insertAiInference,
-  type Database,
-} from '@graft/db';
+import { getEscalationConfig, getWidgetConfig, insertAiInference, type Database } from '@graft/db';
 import { resolveChatModel, resolveEmbedder, type ResolvedChatModel } from '@graft/keyring';
 import { retrieveChunks, type RetrievedChunk } from '@graft/rag';
 import {
@@ -105,7 +100,10 @@ export class AnswerService {
     const { organizationId, sessionId, content, clientNonce, signal, emit, onConversation, log } =
       params;
 
-    const conversation = await this.conversations.getOrCreateConversation(organizationId, sessionId);
+    const conversation = await this.conversations.getOrCreateConversation(
+      organizationId,
+      sessionId,
+    );
     onConversation?.(conversation);
 
     // History BEFORE appending the new turn. SYSTEM events are never placed in the

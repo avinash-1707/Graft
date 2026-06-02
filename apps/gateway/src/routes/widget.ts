@@ -1,9 +1,4 @@
-import {
-  createSession,
-  findSessionForOrg,
-  touchSession,
-  type Database,
-} from '@graft/db';
+import { createSession, findSessionForOrg, touchSession, type Database } from '@graft/db';
 import { sessionIdSchema, widgetSessionRequestSchema } from '@graft/shared';
 import type { FastifyPluginAsync } from 'fastify';
 import type { GatewayEnv } from '../env.js';

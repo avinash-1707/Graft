@@ -27,9 +27,7 @@ export function startTracing(options: StartTracingOptions): Tracing {
       [ATTR_SERVICE_VERSION]: options.serviceVersion,
       [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: options.env,
     }),
-    traceExporter: new OTLPTraceExporter(
-      options.otlpEndpoint ? { url: options.otlpEndpoint } : {},
-    ),
+    traceExporter: new OTLPTraceExporter(options.otlpEndpoint ? { url: options.otlpEndpoint } : {}),
     instrumentations: options.instrumentations ?? [],
   });
   sdk.start();

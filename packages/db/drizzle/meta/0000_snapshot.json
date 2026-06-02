@@ -78,12 +78,8 @@
           "name": "allowed_origins_organization_id_organizations_id_fk",
           "tableFrom": "allowed_origins",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -286,12 +282,8 @@
           "name": "users_organization_id_organizations_id_fk",
           "tableFrom": "users",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -357,12 +349,8 @@
           "name": "ai_provider_credentials_organization_id_organizations_id_fk",
           "tableFrom": "ai_provider_credentials",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -447,12 +435,8 @@
           "name": "widget_configs_organization_id_organizations_id_fk",
           "tableFrom": "widget_configs",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -536,12 +520,8 @@
           "name": "escalation_configs_organization_id_organizations_id_fk",
           "tableFrom": "escalation_configs",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -606,12 +586,8 @@
           "name": "sessions_organization_id_organizations_id_fk",
           "tableFrom": "sessions",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -767,12 +743,8 @@
           "name": "conversations_organization_id_organizations_id_fk",
           "tableFrom": "conversations",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -780,12 +752,8 @@
           "name": "conversations_session_id_sessions_id_fk",
           "tableFrom": "conversations",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -793,12 +761,8 @@
           "name": "conversations_assigned_agent_id_users_id_fk",
           "tableFrom": "conversations",
           "tableTo": "users",
-          "columnsFrom": [
-            "assigned_agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["assigned_agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -968,12 +932,8 @@
           "name": "messages_organization_id_organizations_id_fk",
           "tableFrom": "messages",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -981,12 +941,8 @@
           "name": "messages_conversation_id_conversations_id_fk",
           "tableFrom": "messages",
           "tableTo": "conversations",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["conversation_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -994,12 +950,8 @@
           "name": "messages_sender_agent_id_users_id_fk",
           "tableFrom": "messages",
           "tableTo": "users",
-          "columnsFrom": [
-            "sender_agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["sender_agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1096,12 +1048,8 @@
           "name": "internal_notes_organization_id_organizations_id_fk",
           "tableFrom": "internal_notes",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1109,12 +1057,8 @@
           "name": "internal_notes_conversation_id_conversations_id_fk",
           "tableFrom": "internal_notes",
           "tableTo": "conversations",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["conversation_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1122,12 +1066,8 @@
           "name": "internal_notes_author_agent_id_users_id_fk",
           "tableFrom": "internal_notes",
           "tableTo": "users",
-          "columnsFrom": [
-            "author_agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["author_agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1251,12 +1191,8 @@
           "name": "kb_documents_organization_id_organizations_id_fk",
           "tableFrom": "kb_documents",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1264,12 +1200,8 @@
           "name": "kb_documents_uploaded_by_agent_id_users_id_fk",
           "tableFrom": "kb_documents",
           "tableTo": "users",
-          "columnsFrom": [
-            "uploaded_by_agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["uploaded_by_agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1382,12 +1314,8 @@
           "name": "kb_chunks_organization_id_organizations_id_fk",
           "tableFrom": "kb_chunks",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1395,12 +1323,8 @@
           "name": "kb_chunks_document_id_kb_documents_id_fk",
           "tableFrom": "kb_chunks",
           "tableTo": "kb_documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1416,21 +1340,12 @@
     "public.ai_provider": {
       "name": "ai_provider",
       "schema": "public",
-      "values": [
-        "OPENAI",
-        "ANTHROPIC"
-      ]
+      "values": ["OPENAI", "ANTHROPIC"]
     },
     "public.conversation_state": {
       "name": "conversation_state",
       "schema": "public",
-      "values": [
-        "AI_ACTIVE",
-        "ESCALATION_PENDING",
-        "AGENT_ASSIGNED",
-        "HUMAN_ACTIVE",
-        "CLOSED"
-      ]
+      "values": ["AI_ACTIVE", "ESCALATION_PENDING", "AGENT_ASSIGNED", "HUMAN_ACTIVE", "CLOSED"]
     },
     "public.escalation_trigger": {
       "name": "escalation_trigger",
@@ -1446,56 +1361,32 @@
     "public.kb_document_status": {
       "name": "kb_document_status",
       "schema": "public",
-      "values": [
-        "PENDING",
-        "PROCESSING",
-        "READY",
-        "FAILED"
-      ]
+      "values": ["PENDING", "PROCESSING", "READY", "FAILED"]
     },
     "public.kb_document_type": {
       "name": "kb_document_type",
       "schema": "public",
-      "values": [
-        "PDF",
-        "DOCX",
-        "TEXT"
-      ]
+      "values": ["PDF", "DOCX", "TEXT"]
     },
     "public.message_role": {
       "name": "message_role",
       "schema": "public",
-      "values": [
-        "CUSTOMER",
-        "AI",
-        "AGENT",
-        "SYSTEM"
-      ]
+      "values": ["CUSTOMER", "AI", "AGENT", "SYSTEM"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "OWNER",
-        "CUSTOMER_SUPPORT_AGENT"
-      ]
+      "values": ["OWNER", "CUSTOMER_SUPPORT_AGENT"]
     },
     "public.widget_launcher_position": {
       "name": "widget_launcher_position",
       "schema": "public",
-      "values": [
-        "BOTTOM_RIGHT",
-        "BOTTOM_LEFT"
-      ]
+      "values": ["BOTTOM_RIGHT", "BOTTOM_LEFT"]
     },
     "public.widget_preset": {
       "name": "widget_preset",
       "schema": "public",
-      "values": [
-        "LIGHT",
-        "DARK",
-        "BRAND"
-      ]
+      "values": ["LIGHT", "DARK", "BRAND"]
     }
   },
   "schemas": {},

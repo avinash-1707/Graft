@@ -2,9 +2,7 @@ import { observabilityEnvSchema } from '@graft/observability';
 import { z } from 'zod';
 
 /** Parses 'true'/'false' (and 1/0) from env strings without z.coerce's truthiness traps. */
-const boolFromEnv = z
-  .enum(['true', 'false', '1', '0'])
-  .transform((v) => v === 'true' || v === '1');
+const boolFromEnv = z.enum(['true', 'false', '1', '0']).transform((v) => v === 'true' || v === '1');
 
 /**
  * Gateway runtime configuration. Composes the shared observability env schema

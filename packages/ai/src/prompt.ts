@@ -45,10 +45,9 @@ function toModelRole(role: MessageRole): 'user' | 'assistant' | 'system' {
 
 /** Builds the retrieved-context block injected into the system prompt. */
 function renderContext(chunks: RetrievedChunk[]): string {
-  if (chunks.length === 0) return 'No relevant knowledge-base material was found for this question.';
-  return chunks
-    .map((chunk, i) => `[${String(i + 1)}]\n${chunk.content.trim()}`)
-    .join('\n\n');
+  if (chunks.length === 0)
+    return 'No relevant knowledge-base material was found for this question.';
+  return chunks.map((chunk, i) => `[${String(i + 1)}]\n${chunk.content.trim()}`).join('\n\n');
 }
 
 /**

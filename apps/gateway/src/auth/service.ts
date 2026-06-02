@@ -239,11 +239,7 @@ export class AuthService {
   }
 
   /** Validates a code: enforces the attempt cap, verifies, then single-use consumes it. */
-  private async consumeCode(
-    userId: string,
-    purpose: AuthCodePurpose,
-    code: string,
-  ): Promise<void> {
+  private async consumeCode(userId: string, purpose: AuthCodePurpose, code: string): Promise<void> {
     const row = await findActiveAuthCode(this.deps.db, userId, purpose);
     if (!row) throw AuthErrors.invalidCode();
     if (row.attempts >= this.deps.env.OTP_MAX_ATTEMPTS) throw AuthErrors.invalidCode();

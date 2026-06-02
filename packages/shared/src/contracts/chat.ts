@@ -63,7 +63,12 @@ export const chatTypingSchema = z.object({
 export type ChatTyping = z.infer<typeof chatTypingSchema>;
 
 /** Reason an action was refused; surfaced in the relevant ack. */
-export const chatActionErrorSchema = z.enum(['NOT_FOUND', 'FORBIDDEN', 'INVALID_STATE', 'INTERNAL']);
+export const chatActionErrorSchema = z.enum([
+  'NOT_FOUND',
+  'FORBIDDEN',
+  'INVALID_STATE',
+  'INTERNAL',
+]);
 export type ChatActionError = z.infer<typeof chatActionErrorSchema>;
 
 /** Ack returned to the client for a `conversation:join`. */

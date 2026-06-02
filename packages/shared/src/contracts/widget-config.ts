@@ -1,10 +1,7 @@
 import { z } from 'zod';
 import { widgetPresetSchema } from '../enums/widget-preset.js';
 import { widgetLauncherPositionSchema } from '../enums/widget-launcher-position.js';
-import {
-  DEFAULT_WIDGET_BOT_NAME,
-  DEFAULT_WIDGET_GREETING,
-} from '../constants.js';
+import { DEFAULT_WIDGET_BOT_NAME, DEFAULT_WIDGET_GREETING } from '../constants.js';
 
 /** A CSS hex color: `#rgb`, `#rrggbb`, or `#rrggbbaa`. Stored/echoed verbatim. */
 export const hexColorSchema = z

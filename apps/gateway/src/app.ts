@@ -2,11 +2,7 @@ import rateLimit from '@fastify/rate-limit';
 import type { Encryptor } from '@graft/crypto';
 import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
-import Fastify, {
-  type FastifyBaseLogger,
-  type FastifyError,
-  type FastifyInstance,
-} from 'fastify';
+import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
 import type { JwtConfig } from './auth/jwt.js';
 import type { AuthService } from './auth/service.js';
 import type { GatewayEnv } from './env.js';

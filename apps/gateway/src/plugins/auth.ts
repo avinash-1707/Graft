@@ -1,5 +1,10 @@
 import type { JwtClaims } from '@graft/shared';
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify';
+import type {
+  FastifyPluginAsync,
+  FastifyReply,
+  FastifyRequest,
+  preHandlerHookHandler,
+} from 'fastify';
 import fp from 'fastify-plugin';
 import { AuthErrors } from '../auth/errors.js';
 import { verifyAccessToken, type JwtConfig } from '../auth/jwt.js';

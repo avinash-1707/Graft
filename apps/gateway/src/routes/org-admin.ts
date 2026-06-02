@@ -63,7 +63,8 @@ export const orgAdminRoutes: FastifyPluginAsync<OrgAdminRouteOptions> = async (a
     if (!params) return;
     const orgId = request.authUser!.org;
     const removed = await deleteAllowedOrigin(db, orgId, params.id);
-    if (!removed) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Origin not found.' } });
+    if (!removed)
+      return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Origin not found.' } });
     return reply.code(204).send();
   });
 };

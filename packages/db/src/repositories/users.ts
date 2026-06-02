@@ -67,10 +67,7 @@ export async function updateUserPasswordHash(
   userId: string,
   passwordHash: string,
 ): Promise<void> {
-  await db
-    .update(users)
-    .set({ passwordHash, updatedAt: new Date() })
-    .where(eq(users.id, userId));
+  await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
 }
 
 export interface CreateAgentInput {

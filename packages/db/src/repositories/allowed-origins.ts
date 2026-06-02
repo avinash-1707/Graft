@@ -4,10 +4,7 @@ import { allowedOrigins } from '../schema/organizations.js';
 
 export type AllowedOriginRow = typeof allowedOrigins.$inferSelect;
 
-export async function listAllowedOrigins(
-  db: Database,
-  orgId: string,
-): Promise<AllowedOriginRow[]> {
+export async function listAllowedOrigins(db: Database, orgId: string): Promise<AllowedOriginRow[]> {
   return db.query.allowedOrigins.findMany({
     where: eq(allowedOrigins.organizationId, orgId),
   });

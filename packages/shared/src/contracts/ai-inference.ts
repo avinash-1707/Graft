@@ -2,12 +2,7 @@ import { z } from 'zod';
 import { aiProviderSchema } from '../enums/ai-provider.js';
 import { aiInferenceStatusSchema } from '../enums/ai-inference-status.js';
 import { escalationTriggerSchema } from '../enums/escalation-trigger.js';
-import {
-  conversationIdSchema,
-  messageIdSchema,
-  organizationIdSchema,
-  uuidSchema,
-} from './ids.js';
+import { conversationIdSchema, messageIdSchema, organizationIdSchema, uuidSchema } from './ids.js';
 
 export const aiInferenceIdSchema = uuidSchema.brand<'AiInferenceId'>();
 export type AiInferenceId = z.infer<typeof aiInferenceIdSchema>;

@@ -62,7 +62,12 @@ function emitSwitch(io: ChatServer, conversationId: string, effect: SwitchEffect
   const room = conversationRoom(conversationId);
   io.to(room).emit(
     CHAT_EVENTS.STATE_CHANGED,
-    stateChangedEventSchema.parse({ type: 'state_changed', conversationId, state: effect.state, trigger: null }),
+    stateChangedEventSchema.parse({
+      type: 'state_changed',
+      conversationId,
+      state: effect.state,
+      trigger: null,
+    }),
   );
   io.to(room).emit(
     CHAT_EVENTS.TRANSPORT_SWITCH,
@@ -140,7 +145,11 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
           .to(room)
           .emit(
             CHAT_EVENTS.PRESENCE,
-            chatPresenceSchema.parse({ conversationId, participant: identity.kind, status: 'joined' }),
+            chatPresenceSchema.parse({
+              conversationId,
+              participant: identity.kind,
+              status: 'joined',
+            }),
           );
 
         // Reconnect replay (invariant 11): send anything newer than the client's last
@@ -313,7 +322,11 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
           .to(room)
           .emit(
             CHAT_EVENTS.PRESENCE,
-            chatPresenceSchema.parse({ conversationId, participant: identity.kind, status: 'left' }),
+            chatPresenceSchema.parse({
+              conversationId,
+              participant: identity.kind,
+              status: 'left',
+            }),
           );
       }
     });

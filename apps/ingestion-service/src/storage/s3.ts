@@ -1,4 +1,9 @@
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import type { IngestionEnv } from '../env.js';
 
 export interface Storage {
@@ -41,9 +46,7 @@ export function createStorage(env: IngestionEnv): Storage {
       );
     },
     async getObject(key) {
-      const result = await client.send(
-        new GetObjectCommand({ Bucket: env.S3_BUCKET, Key: key }),
-      );
+      const result = await client.send(new GetObjectCommand({ Bucket: env.S3_BUCKET, Key: key }));
       if (!result.Body) throw new Error(`object not found: ${key}`);
       const bytes = await result.Body.transformToByteArray();
       return Buffer.from(bytes);

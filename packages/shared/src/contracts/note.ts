@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import {
-  agentIdSchema,
-  conversationIdSchema,
-  noteIdSchema,
-  organizationIdSchema,
-} from './ids.js';
+import { agentIdSchema, conversationIdSchema, noteIdSchema, organizationIdSchema } from './ids.js';
 
 export const noteContentSchema = z.string().min(1).max(8000);
 

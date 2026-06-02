@@ -1,9 +1,5 @@
 import { findSessionForOrg, touchSession, type Database } from '@graft/db';
-import {
-  SESSION_HEADER,
-  sessionIdSchema,
-  type WidgetConversationResponse,
-} from '@graft/shared';
+import { SESSION_HEADER, sessionIdSchema, type WidgetConversationResponse } from '@graft/shared';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import type { ConversationService } from '../conversation/service.js';
 
