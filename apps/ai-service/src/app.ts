@@ -12,6 +12,7 @@ import type { ConnectionRegistry } from './realtime/connection-registry.js';
 import metricsPlugin from './plugins/metrics.js';
 import { healthRoutes } from './routes/health.js';
 import { metricsRoutes } from './routes/metrics.js';
+import { widgetConversationRoutes } from './routes/widget-conversation.js';
 import { widgetMessageRoutes } from './routes/widget-messages.js';
 
 declare module 'fastify' {
@@ -73,6 +74,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
 
   await app.register(healthRoutes, { isReady });
   await app.register(metricsRoutes, { metrics });
+  await app.register(widgetConversationRoutes, { db, conversations });
   await app.register(widgetMessageRoutes, { db, answerService, registry });
 
   return app;

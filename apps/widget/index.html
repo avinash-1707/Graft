@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graft Widget — dev harness</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        color: #0f1115;
+        background: #f7f8fa;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 64px 24px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      p {
+        color: #6b7280;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Graft widget — dev harness</h1>
+      <p>
+        This page stands in for a tenant site. The floating launcher in the
+        corner is the embedded widget running inside a Shadow DOM. Edit
+        <code>window.__GRAFT_WIDGET__</code> below to preview tenant appearance
+        overrides.
+      </p>
+    </main>
+    <script>
+      window.__GRAFT_WIDGET__ = {
+        embedToken: 'dev-embed-token',
+        apiBaseUrl: 'http://localhost:8080',
+        appearance: {
+          botName: 'Acme Support',
+          greeting: 'Hey there! Ask us anything about Acme.',
+        },
+      };
+    </script>
+    <script type="module" src="/src/embed.ts"></script>
+  </body>
+</html>

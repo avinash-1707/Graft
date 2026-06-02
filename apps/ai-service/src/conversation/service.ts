@@ -71,6 +71,19 @@ export class ConversationService {
     return toConversation(row);
   }
 
+  /**
+   * Resolves the session's active (non-CLOSED) conversation without creating one.
+   * Used by the widget resume read (`GET /widget/conversation`) — a fresh session
+   * returns undefined rather than minting an empty conversation on a mere page load.
+   */
+  async findActiveConversation(
+    organizationId: string,
+    sessionId: string,
+  ): Promise<Conversation | undefined> {
+    const row = await findActiveConversationBySession(this.db, sessionId, organizationId);
+    return row ? toConversation(row) : undefined;
+  }
+
   /** Loads a conversation by id within the org, or undefined if not found. */
   async getConversation(
     organizationId: string,

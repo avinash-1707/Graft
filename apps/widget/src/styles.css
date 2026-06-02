@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+
+/*
+ * Widget design tokens. Defaults mirror the LIGHT preset from ui-context.md and
+ * live on `:host` so they are scoped to the Shadow DOM and never leak to / from
+ * the host page. Tenant customization sets the overridable subset
+ * (accent-primary, bg-surface, text-primary, text-muted) as inline CSS custom
+ * properties on the host element at runtime — those inherit across the shadow
+ * boundary and win over these defaults. Components reference the tokens via
+ * Tailwind arbitrary values, e.g. `bg-[var(--graft-bg-surface)]`.
+ */
+:host {
+  --graft-accent-primary: #4f46e5;
+  --graft-accent-hover: #4338ca;
+  --graft-bg-surface: #ffffff;
+  --graft-bg-subtle: #eff1f4;
+  --graft-text-primary: #0f1115;
+  --graft-text-muted: #6b7280;
+  --graft-text-inverted: #ffffff;
+  --graft-border-default: #e3e6eb;
+  --graft-msg-ai: #eef2ff;
+
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--graft-text-primary);
+
+  /* Float above typical host-page content without trapping pointer events. */
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+}
+
+/* Only the interactive surfaces capture pointer events; the rest stays click-through. */
+:host *:where(button, input, textarea, a, [data-graft-interactive]) {
+  pointer-events: auto;
+}
