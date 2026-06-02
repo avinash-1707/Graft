@@ -12,6 +12,8 @@ export interface WidgetBootOptions {
   readonly embedToken?: string;
   /** Gateway base URL the widget talks to. Defaults to the script's own origin later. */
   readonly apiBaseUrl?: string;
+  /** Optional direct chat-service origin for the human-mode WebSocket; defaults to `apiBaseUrl`. */
+  readonly chatBaseUrl?: string;
   /** Optional appearance override (server-fetched in unit 22; inline here for preview). */
   readonly appearance?: Partial<WidgetConfig>;
 }
@@ -19,6 +21,7 @@ export interface WidgetBootOptions {
 export interface ResolvedWidgetConfig {
   readonly embedToken: string | undefined;
   readonly apiBaseUrl: string | undefined;
+  readonly chatBaseUrl: string | undefined;
   readonly appearance: WidgetConfig;
 }
 
@@ -48,6 +51,7 @@ export function resolveBootConfig(options?: WidgetBootOptions): ResolvedWidgetCo
   return {
     embedToken: boot.embedToken,
     apiBaseUrl: boot.apiBaseUrl,
+    chatBaseUrl: boot.chatBaseUrl,
     appearance: parsed.success ? parsed.data : DEFAULT_WIDGET_CONFIG,
   };
 }

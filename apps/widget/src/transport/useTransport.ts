@@ -8,7 +8,12 @@ import {
 } from '@graft/shared';
 import type { ResolvedWidgetConfig } from '../config';
 import { getOrCreateSessionId, setSessionId } from '../session';
-import { responderForState, type ConnectionStatus, type Responder, type WidgetMessage } from '../types';
+import {
+  responderForState,
+  type ConnectionStatus,
+  type Responder,
+  type WidgetMessage,
+} from '../types';
 import { fetchConversation, mintSession, type ApiConfig } from './api';
 import { TransportManager } from './manager';
 
@@ -48,14 +53,25 @@ function upsertBySequence(messages: WidgetMessage[], next: WidgetMessage): Widge
 function reduce(state: ChatState, action: ChatAction): ChatState {
   switch (action.type) {
     case 'seed':
-      return { messages: action.messages, pending: [], streaming: null, conversationState: action.state };
+      return {
+        messages: action.messages,
+        pending: [],
+        streaming: null,
+        conversationState: action.state,
+      };
 
     case 'optimistic':
       return {
         ...state,
         pending: [
           ...state.pending,
-          { id: action.id, role: MessageRole.CUSTOMER, content: action.content, sequence: STREAMING_SEQUENCE, pending: true },
+          {
+            id: action.id,
+            role: MessageRole.CUSTOMER,
+            content: action.content,
+            sequence: STREAMING_SEQUENCE,
+            pending: true,
+          },
         ],
       };
 
@@ -102,7 +118,7 @@ export interface UseTransport {
  * backend (the dev harness or a misconfigured page) so the shell still functions.
  */
 export function useTransport(config: ResolvedWidgetConfig): UseTransport {
-  const { appearance, embedToken, apiBaseUrl } = config;
+  const { appearance, embedToken, apiBaseUrl, chatBaseUrl } = config;
   const online = Boolean(embedToken && apiBaseUrl);
 
   const greeting = useMemo<WidgetMessage>(
@@ -125,7 +141,11 @@ export function useTransport(config: ResolvedWidgetConfig): UseTransport {
   useEffect(() => {
     if (!online || !embedToken || !apiBaseUrl) return;
 
-    const api: ApiConfig = { apiBaseUrl, embedToken };
+    const api: ApiConfig = {
+      apiBaseUrl,
+      embedToken,
+      ...(chatBaseUrl !== undefined ? { chatBaseUrl } : {}),
+    };
     let cancelled = false;
 
     async function init(): Promise<void> {
@@ -139,7 +159,11 @@ export function useTransport(config: ResolvedWidgetConfig): UseTransport {
 
         const manager = new TransportManager(api, confirmedSession);
         manager.onEvent((event) => dispatch({ type: 'event', event }));
-        manager.start({ lastSequence: snapshot.conversation?.lastSequence ?? 0 });
+        manager.start({
+          conversationId: snapshot.conversation?.id ?? null,
+          state: snapshot.conversation?.state ?? ConversationState.AI_ACTIVE,
+          lastSequence: snapshot.conversation?.lastSequence ?? 0,
+        });
         managerRef.current = manager;
 
         const history = snapshot.messages.map(toWidgetMessage);
@@ -162,7 +186,7 @@ export function useTransport(config: ResolvedWidgetConfig): UseTransport {
       managerRef.current?.stop();
       managerRef.current = null;
     };
-  }, [online, embedToken, apiBaseUrl, greeting]);
+  }, [online, embedToken, apiBaseUrl, chatBaseUrl, greeting]);
 
   const sendMessage = useCallback(
     (text: string) => {
@@ -192,7 +216,15 @@ export function useTransport(config: ResolvedWidgetConfig): UseTransport {
 
   const messages = useMemo<WidgetMessage[]>(() => {
     const draft: WidgetMessage[] = state.streaming
-      ? [{ id: state.streaming.id, role: MessageRole.AI, content: state.streaming.content, sequence: STREAMING_SEQUENCE, streaming: true }]
+      ? [
+          {
+            id: state.streaming.id,
+            role: MessageRole.AI,
+            content: state.streaming.content,
+            sequence: STREAMING_SEQUENCE,
+            streaming: true,
+          },
+        ]
       : [];
     return [...state.messages, ...state.pending, ...draft];
   }, [state.messages, state.pending, state.streaming]);

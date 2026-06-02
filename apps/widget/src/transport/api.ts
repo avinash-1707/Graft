@@ -15,6 +15,8 @@ import {
 export interface ApiConfig {
   readonly apiBaseUrl: string;
   readonly embedToken: string;
+  /** Optional direct chat-service origin for the WebSocket (unit 23); defaults to `apiBaseUrl`. */
+  readonly chatBaseUrl?: string;
 }
 
 function joinUrl(base: string, path: string): string {
