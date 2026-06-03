@@ -1,0 +1,17 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Graft mark — the graft union.
+    Two strands (AI = brand red, human = deep red) arrive from the left,
+    bind at a single union node, and grow on as one continuous line.
+    The product idea: two ways of helping grafted into one conversation.
+  -->
+  <rect width="32" height="32" rx="8" fill="#1D1616"/>
+  <!-- AI strand (upper) -->
+  <path d="M5 9.5C10 9.5 11.5 16 16 16" stroke="#D84040" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Human strand (lower) -->
+  <path d="M5 22.5C10 22.5 11.5 16 16 16" stroke="#8E1616" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Single grown line continuing right -->
+  <path d="M16 16C20.5 16 22 16 27 16" stroke="#EEEEEE" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Union node -->
+  <circle cx="16" cy="16" r="2.6" fill="#EEEEEE"/>
+</svg>

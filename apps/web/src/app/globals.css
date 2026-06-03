@@ -188,6 +188,40 @@
     color: var(--l-ink);
   }
 
+  /* Firefox */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--l-ink) 22%, transparent) transparent;
+  }
+
+  /* WebKit / Chromium */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--l-ink) 20%, transparent);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+    min-height: 48px;
+    transition: background-color 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--l-brand) 45%, transparent);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
   h1,
   h2,
   h3 {

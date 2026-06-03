@@ -7,30 +7,10 @@ export function Hero() {
       id="top"
       className="relative overflow-hidden px-5 pt-28 pb-16 sm:px-8 sm:pt-36 lg:pt-44"
     >
-      {/* Signature aura — a slow brand glow that anchors the centered column. */}
-      <div
-        aria-hidden="true"
-        className="hero-bloom pointer-events-none absolute left-1/2 top-[6rem] -z-10 h-[40rem] w-[40rem] -translate-x-1/2 rounded-full blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 40%, rgba(216,64,64,0.32), rgba(142,22,22,0.12) 44%, transparent 70%)",
-        }}
-      />
-      {/* Borderless legibility veil — soft wash of the page base, no edges, so the
-          headline reads clean over the animated backdrop without a framed card. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[42%] -z-10 h-[34rem] w-[60rem] max-w-[96vw] -translate-x-1/2 -translate-y-1/2 blur-[64px]"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at center, color-mix(in srgb, var(--l-base) 70%, transparent) 0%, color-mix(in srgb, var(--l-base) 34%, transparent) 50%, transparent 78%)",
-        }}
-      />
-
       <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
         {/* Eyebrow chip. */}
         <p className="intro-down" style={{ animationDelay: "0.05s" }}>
-          <span className="glass-2 inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono text-[0.72rem] uppercase tracking-[0.2em] text-dim">
+          <span className="glass-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 font-mono text-[0.72rem] uppercase tracking-[0.2em] text-dim dark:bg-white/[0.03]">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand" />
@@ -47,6 +27,15 @@ export function Hero() {
           >
             Answers that feel
             <span className="relative ml-2 inline-block pr-[0.12em] italic sm:ml-4">
+              {/* Brand bloom scoped to just the word "human". */}
+              <span
+                aria-hidden="true"
+                className="hero-bloom pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[230%] w-[150%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+                style={{
+                  background:
+                    "radial-gradient(circle at 50% 50%, rgba(216,64,64,0.32), rgba(142,22,22,0.12) 46%, transparent 72%)",
+                }}
+              />
               <span className="hero-word pr-[0.04em]">human</span>
               <span
                 aria-hidden="true"

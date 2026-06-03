@@ -4,9 +4,10 @@ type LogoProps = {
 };
 
 /**
- * The graft mark: two strands arriving from the left and joining into a single
- * line that continues right. A quiet visual of the product idea, two ways of
- * helping grown into one conversation.
+ * The graft mark — the graft union. Two strands (AI = brand red, human = deep
+ * red) arrive from the left, bind at a single union node, and grow on as one
+ * continuous line. The product idea: two ways of helping grafted into one
+ * conversation, the silent SSE/WS handoff shown as the bind point.
  */
 export function Logo({ className, withWordmark = true }: LogoProps) {
   return (
@@ -14,24 +15,30 @@ export function Logo({ className, withWordmark = true }: LogoProps) {
       <svg
         width="26"
         height="26"
-        viewBox="0 0 26 26"
+        viewBox="0 0 32 32"
         fill="none"
         aria-hidden="true"
         className="shrink-0"
       >
         <path
-          d="M2 6.5C8 6.5 9.5 13 13 13C16.5 13 18 6.5 24 6.5"
+          d="M5 9.5C10 9.5 11.5 16 16 16"
           stroke="var(--l-brand)"
-          strokeWidth="1.6"
+          strokeWidth="2.2"
           strokeLinecap="round"
         />
         <path
-          d="M2 19.5C8 19.5 9.5 13 13 13C16.5 13 18 19.5 24 19.5"
+          d="M5 22.5C10 22.5 11.5 16 16 16"
           stroke="var(--l-brand-deep)"
-          strokeWidth="1.6"
+          strokeWidth="2.2"
           strokeLinecap="round"
         />
-        <circle cx="13" cy="13" r="2.1" fill="var(--l-ink)" />
+        <path
+          d="M16 16C20.5 16 22 16 27 16"
+          stroke="var(--l-ink)"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+        />
+        <circle cx="16" cy="16" r="2.6" fill="var(--l-ink)" />
       </svg>
       {withWordmark && (
         <span className="font-display text-[1.35rem] leading-none tracking-tight text-ink">

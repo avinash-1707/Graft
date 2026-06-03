@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/site/ThemeProvider";
+import { SmoothScroll } from "@/components/site/SmoothScroll";
 import { Component as AnimatedBackground } from "@/components/ui/raycast-animated-background";
 
 export const metadata: Metadata = {
@@ -23,9 +24,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <ThemeProvider>
-          <AnimatedBackground />
-          <div className="grain" aria-hidden="true" />
-          <div className="relative z-10">{children}</div>
+          <SmoothScroll>
+            <AnimatedBackground />
+            <div className="grain" aria-hidden="true" />
+            <div className="relative z-10">{children}</div>
+          </SmoothScroll>
         </ThemeProvider>
       </body>
     </html>
