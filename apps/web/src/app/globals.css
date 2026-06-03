@@ -227,6 +227,111 @@
 }
 
 /* ----------------------------------------------------------------------------
+   Hero — kinetic type treatments. No bounded card; the headline lifts clear of
+   the animated backdrop via a borderless veil, a gradient sheen, and a wipe.
+---------------------------------------------------------------------------- */
+/* Mount entrance — materialize down (opacity + translateY + blur), the house
+   enter recipe expressed as a fill-both keyframe so server components can use it
+   without JS. Stagger via inline animation-delay. */
+.intro-down {
+  animation: intro-down 0.7s var(--ease-out) both;
+}
+
+@keyframes intro-down {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* Backdrop bloom — the hero aura fades up rather than popping in. Ends at its
+   resting opacity so it never flashes to full. */
+.hero-bloom {
+  opacity: 0;
+  animation: hero-bloom 1.3s var(--ease-out) 0.1s both;
+}
+
+@keyframes hero-bloom {
+  to {
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-down,
+  .hero-bloom {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  .hero-bloom {
+    opacity: 0.8;
+  }
+}
+
+/* Animated gradient ink for the emphasised word. */
+.hero-word {
+  background-image: linear-gradient(
+    100deg,
+    var(--l-brand-deep) 0%,
+    var(--l-brand) 38%,
+    color-mix(in srgb, var(--l-brand) 60%, white) 50%,
+    var(--l-brand) 62%,
+    var(--l-brand-deep) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hero-sheen 6s var(--ease-soft) infinite;
+}
+
+@keyframes hero-sheen {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Kinetic underline that wipes in under the word. */
+.hero-underline {
+  transform-origin: left center;
+  animation: hero-wipe 0.9s var(--ease-out) 0.8s both;
+}
+
+@keyframes hero-wipe {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-word {
+    animation: none;
+  }
+  .hero-underline {
+    animation: none;
+    transform: none;
+    opacity: 0.85;
+  }
+}
+
+/* ----------------------------------------------------------------------------
    Reveal system — single enter recipe (opacity + translateY + blur), eased out,
    state-driven so it stays interruptible, staggered via --reveal-delay.
 ---------------------------------------------------------------------------- */

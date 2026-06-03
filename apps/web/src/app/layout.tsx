@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/site/ThemeProvider";
+import { Component as AnimatedBackground } from "@/components/ui/raycast-animated-background";
 
 export const metadata: Metadata = {
   title: "Graft, support that feels like one warm conversation",
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <ThemeProvider>
+          <AnimatedBackground />
           <div className="grain" aria-hidden="true" />
           <div className="relative z-10">{children}</div>
         </ThemeProvider>

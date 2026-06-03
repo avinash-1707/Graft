@@ -11,17 +11,22 @@ const links = [
 export function Nav() {
   return (
     <header className="sticky top-0 z-30 px-3 pt-3 sm:px-5 sm:pt-4">
-      <nav className="glass mx-auto flex h-15 max-w-6xl items-center justify-between rounded-2xl px-4 py-2.5 sm:px-5">
+      <nav className="intro-down glass mx-auto flex h-15 max-w-6xl items-center justify-between rounded-2xl px-4 py-2.5 sm:px-5">
         <a
           href="#top"
-          className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/45"
+          className="intro-down rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/45"
+          style={{ animationDelay: "0.12s" }}
         >
           <Logo />
         </a>
 
         <ul className="hidden items-center gap-1 md:flex">
-          {links.map((link) => (
-            <li key={link.href}>
+          {links.map((link, i) => (
+            <li
+              key={link.href}
+              className="intro-down"
+              style={{ animationDelay: `${0.18 + i * 0.06}s` }}
+            >
               <a
                 href={link.href}
                 className="rounded-full px-3.5 py-2 text-[0.9rem] text-dim transition-colors duration-200 hover:text-ink"
@@ -32,7 +37,10 @@ export function Nav() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-1.5">
+        <div
+          className="intro-down flex items-center gap-1.5"
+          style={{ animationDelay: "0.36s" }}
+        >
           <ModeToggle />
           <Button href="/login" variant="ghost" className="hidden sm:inline-flex">
             Sign in
