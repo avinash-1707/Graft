@@ -141,16 +141,14 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
 
         const room = conversationRoom(conversationId);
         await socket.join(room);
-        socket
-          .to(room)
-          .emit(
-            CHAT_EVENTS.PRESENCE,
-            chatPresenceSchema.parse({
-              conversationId,
-              participant: identity.kind,
-              status: 'joined',
-            }),
-          );
+        socket.to(room).emit(
+          CHAT_EVENTS.PRESENCE,
+          chatPresenceSchema.parse({
+            conversationId,
+            participant: identity.kind,
+            status: 'joined',
+          }),
+        );
 
         // Reconnect replay (invariant 11): send anything newer than the client's last
         // sequence so the SSE↔WS switch never loses or duplicates a message.
@@ -318,16 +316,14 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
       for (const room of socket.rooms) {
         if (!room.startsWith('conv:')) continue;
         const conversationId = room.slice('conv:'.length);
-        socket
-          .to(room)
-          .emit(
-            CHAT_EVENTS.PRESENCE,
-            chatPresenceSchema.parse({
-              conversationId,
-              participant: identity.kind,
-              status: 'left',
-            }),
-          );
+        socket.to(room).emit(
+          CHAT_EVENTS.PRESENCE,
+          chatPresenceSchema.parse({
+            conversationId,
+            participant: identity.kind,
+            status: 'left',
+          }),
+        );
       }
     });
 
