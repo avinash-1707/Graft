@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ----------------------------------------------------------------------------
+   Graft dashboard theme.
+   Same red palette as the marketing surface (#1D1616 · #8E1616 · #D84040 ·
+   #EEEEEE) but rendered on SOLID surfaces — no glassmorphism / backdrop blur.
+   Every colour is a theme-aware CSS variable so light and dark flip cleanly.
+---------------------------------------------------------------------------- */
+
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* dashboard chrome */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+
+  /* brand accents (solid) */
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-on-brand: var(--on-brand);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  --radius: 0.7rem;
+
+  /* light — solid surfaces */
+  --background: #f2efef;
+  --foreground: #1d1616;
+  --card: #ffffff;
+  --card-foreground: #1d1616;
+  --popover: #ffffff;
+  --popover-foreground: #1d1616;
+  --primary: #8e1616;
+  --primary-foreground: #f6efef;
+  --secondary: #e7e2e2;
+  --secondary-foreground: #1d1616;
+  --muted: #ece8e8;
+  --muted-foreground: #74605f;
+  --accent: #f4e2e2;
+  --accent-foreground: #8e1616;
+  --destructive: #d84040;
+  --success: #2f8f5b;
+  --warning: #b97309;
+  --border: #ddd6d6;
+  --input: #cfc7c7;
+  --ring: #d84040;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1d1616;
+  --sidebar-accent: #f4e2e2;
+  --sidebar-border: #e3dcdc;
+
+  --brand: #d84040;
+  --brand-deep: #8e1616;
+  --on-brand: #f6efef;
+}
+
+.dark {
+  /* dark — solid surfaces */
+  --background: #1d1616;
+  --foreground: #eeeeee;
+  --card: #271f1f;
+  --card-foreground: #eeeeee;
+  --popover: #281d1d;
+  --popover-foreground: #eeeeee;
+  --primary: #d84040;
+  --primary-foreground: #1d1616;
+  --secondary: #2c2222;
+  --secondary-foreground: #eeeeee;
+  --muted: #2a2020;
+  --muted-foreground: #b3a4a4;
+  --accent: #3a2020;
+  --accent-foreground: #f6dcdc;
+  --destructive: #d84040;
+  --success: #4caf7b;
+  --warning: #d9971f;
+  --border: #382c2c;
+  --input: #443434;
+  --ring: #d84040;
+
+  --sidebar: #221a1a;
+  --sidebar-foreground: #eeeeee;
+  --sidebar-accent: #3a2020;
+  --sidebar-border: #352828;
+
+  --brand: #d84040;
+  --brand-deep: #a81f1f;
+  --on-brand: #1d1616;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: rgba(216, 64, 64, 0.26);
+    color: var(--foreground);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--foreground) 18%, transparent);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--brand) 45%, transparent);
+    background-clip: padding-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
