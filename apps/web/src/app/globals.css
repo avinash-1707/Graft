@@ -1,0 +1,271 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ----------------------------------------------------------------------------
+   Graft landing — red glassmorphism theme.
+   Palette: #1D1616 (ink) · #8E1616 (deep) · #D84040 (brand) · #EEEEEE (light).
+   Every colour is a theme-aware CSS variable so light and dark flip cleanly.
+   The shadcn primitives read the same red tokens, so they inherit the theme.
+---------------------------------------------------------------------------- */
+
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@theme inline {
+  /* shadcn token surface */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* landing semantic tokens (namespaced to avoid shadcn clashes) */
+  --color-base: var(--l-base);
+  --color-ink: var(--l-ink);
+  --color-soft: var(--l-soft);
+  --color-dim: var(--l-dim);
+  --color-faint: var(--l-faint);
+  --color-line: var(--l-line);
+  --color-line2: var(--l-line2);
+  --color-brand: var(--l-brand);
+  --color-brand-deep: var(--l-brand-deep);
+  --color-brand-soft: var(--l-brand-soft);
+  --color-on-brand: var(--l-on-brand);
+  --color-glass: var(--l-glass);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+:root {
+  --radius: 0.7rem;
+
+  /* shadcn — light */
+  --background: #ece9e9;
+  --foreground: #1d1616;
+  --card: rgba(255, 255, 255, 0.62);
+  --card-foreground: #1d1616;
+  --popover: rgba(245, 241, 241, 0.82);
+  --popover-foreground: #1d1616;
+  --primary: #8e1616;
+  --primary-foreground: #f6efef;
+  --secondary: rgba(29, 22, 22, 0.06);
+  --secondary-foreground: #1d1616;
+  --muted: rgba(29, 22, 22, 0.05);
+  --muted-foreground: #74605f;
+  --accent: rgba(216, 64, 64, 0.14);
+  --accent-foreground: #8e1616;
+  --destructive: #d84040;
+  --border: rgba(29, 22, 22, 0.12);
+  --input: rgba(29, 22, 22, 0.16);
+  --ring: #d84040;
+
+  /* landing — light */
+  --l-base: #ece9e9;
+  --l-ink: #1d1616;
+  --l-soft: #3a2e2e;
+  --l-dim: #74605f;
+  --l-faint: #9a8a8a;
+  --l-line: rgba(29, 22, 22, 0.12);
+  --l-line2: rgba(29, 22, 22, 0.07);
+  --l-brand: #d84040;
+  --l-brand-deep: #8e1616;
+  --l-brand-soft: rgba(216, 64, 64, 0.12);
+  --l-on-brand: #f6efef;
+
+  --l-glass: rgba(255, 255, 255, 0.55);
+  --l-glass-2: rgba(255, 255, 255, 0.38);
+  --l-glass-border: rgba(255, 255, 255, 0.7);
+  --l-glass-shadow: 0 22px 60px -30px rgba(142, 22, 22, 0.32);
+  --l-glow-1: radial-gradient(
+    58rem 40rem at 82% -12%,
+    rgba(216, 64, 64, 0.16),
+    transparent 60%
+  );
+  --l-glow-2: radial-gradient(
+    52rem 42rem at -2% 10%,
+    rgba(142, 22, 22, 0.1),
+    transparent 58%
+  );
+}
+
+.dark {
+  /* shadcn — dark */
+  --background: #1d1616;
+  --foreground: #eeeeee;
+  --card: rgba(238, 238, 238, 0.05);
+  --card-foreground: #eeeeee;
+  --popover: rgba(40, 29, 29, 0.82);
+  --popover-foreground: #eeeeee;
+  --primary: #d84040;
+  --primary-foreground: #1d1616;
+  --secondary: rgba(238, 238, 238, 0.08);
+  --secondary-foreground: #eeeeee;
+  --muted: rgba(238, 238, 238, 0.06);
+  --muted-foreground: rgba(238, 238, 238, 0.62);
+  --accent: rgba(216, 64, 64, 0.22);
+  --accent-foreground: #f6dcdc;
+  --destructive: #d84040;
+  --border: rgba(238, 238, 238, 0.12);
+  --input: rgba(238, 238, 238, 0.16);
+  --ring: #d84040;
+
+  /* landing — dark */
+  --l-base: #1d1616;
+  --l-ink: #eeeeee;
+  --l-soft: #d8cfcf;
+  --l-dim: rgba(238, 238, 238, 0.62);
+  --l-faint: rgba(238, 238, 238, 0.4);
+  --l-line: rgba(238, 238, 238, 0.12);
+  --l-line2: rgba(238, 238, 238, 0.07);
+  --l-brand: #d84040;
+  --l-brand-deep: #a81f1f;
+  --l-brand-soft: rgba(216, 64, 64, 0.18);
+  --l-on-brand: #1d1616;
+
+  --l-glass: rgba(238, 238, 238, 0.055);
+  --l-glass-2: rgba(238, 238, 238, 0.035);
+  --l-glass-border: rgba(238, 238, 238, 0.12);
+  --l-glass-shadow: 0 26px 64px -32px rgba(0, 0, 0, 0.66);
+  --l-glow-1: radial-gradient(
+    58rem 40rem at 82% -12%,
+    rgba(216, 64, 64, 0.16),
+    transparent 60%
+  );
+  --l-glow-2: radial-gradient(
+    54rem 44rem at -4% 8%,
+    rgba(142, 22, 22, 0.32),
+    transparent 60%
+  );
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--l-base);
+    background-image: var(--l-glow-1), var(--l-glow-2);
+    background-attachment: fixed;
+    color: var(--l-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: rgba(216, 64, 64, 0.26);
+    color: var(--l-ink);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  /* Frosted glass surface — the signature material of this design. */
+  .glass {
+    background-color: var(--l-glass);
+    border: 1px solid var(--l-glass-border);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    box-shadow: var(--l-glass-shadow);
+  }
+
+  .glass-2 {
+    background-color: var(--l-glass-2);
+    border: 1px solid var(--l-glass-border);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+  }
+
+  /* Fine grain overlay for paper-like texture, fixed so it never scrolls. */
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Reveal system — single enter recipe (opacity + translateY + blur), eased out,
+   state-driven so it stays interruptible, staggered via --reveal-delay.
+---------------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(6px);
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 0.7s var(--ease-out),
+    filter 0.7s var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.reveal[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+    will-change: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

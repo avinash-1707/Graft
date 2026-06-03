@@ -36,3 +36,6 @@ coverage/
 *.seed
 context/
 CLAUDE.md
+
+# Next.js
+next-env.d.ts
