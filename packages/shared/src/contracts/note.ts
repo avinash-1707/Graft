@@ -13,3 +13,11 @@ export const internalNoteSchema = z.object({
 });
 
 export type InternalNote = z.infer<typeof internalNoteSchema>;
+
+/** Body for creating an internal note (author + scope come from the route, not the client). */
+export const createNoteRequestSchema = z.object({ content: noteContentSchema });
+export type CreateNoteRequest = z.infer<typeof createNoteRequestSchema>;
+
+/** Notes for one conversation, oldest-first. */
+export const listNotesResponseSchema = z.object({ notes: z.array(internalNoteSchema) });
+export type ListNotesResponse = z.infer<typeof listNotesResponseSchema>;

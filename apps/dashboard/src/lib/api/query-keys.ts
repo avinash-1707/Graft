@@ -7,4 +7,5 @@ export const queryKeys = {
   escalationConfig: ["config", "escalation"] as const,
   agents: ["agents"] as const,
   kbDocuments: ["kb", "documents"] as const,
+  notes: (conversationId: string) => ["notes", conversationId] as const,
 };

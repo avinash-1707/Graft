@@ -14,6 +14,13 @@ export function relativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
+/** Clock time (HH:MM) for a message bubble's timestamp. */
+export function messageTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 const ROLE_LABELS: Record<MessageRole, string> = {
   CUSTOMER: "Customer",
   AI: "AI",

@@ -7,6 +7,7 @@ import metricsPlugin from './plugins/metrics.js';
 import type { OrgFeedHub } from './realtime/org-feed.js';
 import { healthRoutes } from './routes/health.js';
 import { metricsRoutes } from './routes/metrics.js';
+import { notesRoutes } from './routes/notes.js';
 import { orgFeedRoutes } from './routes/org-feed.js';
 
 export interface BuildAppOptions {
@@ -41,7 +42,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   // SSE handler hijacks the reply, so the preflight is handled here before the route.
   await app.register(cors, {
     origin: corsOrigins,
-    methods: ['GET', 'OPTIONS'],
+    methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     maxAge: 86_400,
   });
@@ -68,6 +69,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   await app.register(healthRoutes, { isReady });
   await app.register(metricsRoutes, { metrics });
   await app.register(orgFeedRoutes, { db, hub });
+  await app.register(notesRoutes, { db });
 
   return app;
 }

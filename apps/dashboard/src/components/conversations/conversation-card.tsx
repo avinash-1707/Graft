@@ -1,6 +1,7 @@
 import type { EscalationTrigger, Message, OrgFeedConversation } from "@graft/shared";
 import { MessageCircle } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { StateBadge } from "./state-badge";
 import { relativeTime, roleLabel, sessionLabel } from "./format";
 
@@ -21,15 +22,23 @@ export function ConversationCard({
   conversation,
   lastMessage,
   index,
+  selected = false,
+  onSelect,
 }: {
   conversation: OrgFeedConversation;
   lastMessage: Message | undefined;
   index: number;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
   return (
     <li
-      className="rise-in rounded-lg border border-border bg-card p-4 transition-colors hover:border-input"
+      className={cn(
+        "rise-in cursor-pointer rounded-lg border bg-card p-4 transition-colors hover:border-input",
+        selected ? "border-primary ring-1 ring-primary/30" : "border-border",
+      )}
       style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+      onClick={onSelect}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">

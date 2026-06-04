@@ -11,3 +11,4 @@ export * from './escalation-configs.js';
 export * from './kb-documents.js';
 export * from './conversations.js';
 export * from './messages.js';
+export * from './internal-notes.js';
