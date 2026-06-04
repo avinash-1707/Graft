@@ -102,16 +102,6 @@
   --l-glass-2: rgba(255, 255, 255, 0.38);
   --l-glass-border: rgba(255, 255, 255, 0.7);
   --l-glass-shadow: 0 22px 60px -30px rgba(142, 22, 22, 0.32);
-  --l-glow-1: radial-gradient(
-    58rem 40rem at 82% -12%,
-    rgba(216, 64, 64, 0.16),
-    transparent 60%
-  );
-  --l-glow-2: radial-gradient(
-    52rem 42rem at -2% 10%,
-    rgba(142, 22, 22, 0.1),
-    transparent 58%
-  );
 }
 
 .dark {
@@ -152,16 +142,6 @@
   --l-glass-2: rgba(238, 238, 238, 0.035);
   --l-glass-border: rgba(238, 238, 238, 0.12);
   --l-glass-shadow: 0 26px 64px -32px rgba(0, 0, 0, 0.66);
-  --l-glow-1: radial-gradient(
-    58rem 40rem at 82% -12%,
-    rgba(216, 64, 64, 0.16),
-    transparent 60%
-  );
-  --l-glow-2: radial-gradient(
-    54rem 44rem at -4% 8%,
-    rgba(142, 22, 22, 0.32),
-    transparent 60%
-  );
 }
 
 @layer base {
@@ -175,8 +155,6 @@
 
   body {
     background-color: var(--l-base);
-    background-image: var(--l-glow-1), var(--l-glow-2);
-    background-attachment: fixed;
     color: var(--l-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
