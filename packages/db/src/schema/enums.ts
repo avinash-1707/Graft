@@ -2,14 +2,12 @@ import { pgEnum } from 'drizzle-orm/pg-core';
 import {
   AI_INFERENCE_STATUSES,
   AI_PROVIDERS,
-  AUTH_CODE_PURPOSES,
   CONVERSATION_STATES,
   ESCALATION_TRIGGERS,
   MESSAGE_ROLES,
   USER_ROLES,
   type AiInferenceStatus,
   type AiProvider,
-  type AuthCodePurpose,
   type ConversationState,
   type EscalationTrigger,
   type MessageRole,
@@ -24,10 +22,6 @@ export const conversationStatePgEnum = pgEnum(
 );
 export const messageRolePgEnum = pgEnum('message_role', asTuple<MessageRole>(MESSAGE_ROLES));
 export const userRolePgEnum = pgEnum('user_role', asTuple<UserRole>(USER_ROLES));
-export const authCodePurposePgEnum = pgEnum(
-  'auth_code_purpose',
-  asTuple<AuthCodePurpose>(AUTH_CODE_PURPOSES),
-);
 export const aiProviderPgEnum = pgEnum('ai_provider', asTuple<AiProvider>(AI_PROVIDERS));
 export const escalationTriggerPgEnum = pgEnum(
   'escalation_trigger',

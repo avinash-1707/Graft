@@ -1,6 +1,6 @@
 import { pgTable, uuid, text, integer, timestamp, index } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations.js';
-import { users } from './users.js';
+import { users } from './auth.js';
 import { kbDocumentStatusPgEnum, kbDocumentTypePgEnum } from './enums.js';
 
 export const kbDocuments = pgTable(

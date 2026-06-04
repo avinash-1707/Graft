@@ -10,6 +10,8 @@
     "moduleResolution": "Bundler",
     "allowJs": true,
     "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
     "incremental": true,
     "resolveJsonModule": true,
     "plugins": [{ "name": "next" }]

@@ -1,7 +1,7 @@
 import { pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations.js';
 import { conversations } from './conversations.js';
-import { users } from './users.js';
+import { users } from './auth.js';
 
 export const internalNotes = pgTable(
   'internal_notes',

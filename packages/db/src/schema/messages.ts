@@ -10,7 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations.js';
 import { conversations } from './conversations.js';
-import { users } from './users.js';
+import { users } from './auth.js';
 import { messageRolePgEnum } from './enums.js';
 
 export const messages = pgTable(

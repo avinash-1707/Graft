@@ -18,9 +18,10 @@ export const chatServiceEnvSchema = observabilityEnvSchema.extend({
   // --- Redis (Socket.IO adapter pub/sub for cross-instance fan-out) ---
   REDIS_URL: z.string().min(1),
 
-  // --- JWT verification (agent connections; same secret/issuer the gateway signs with) ---
-  JWT_SECRET: z.string().min(32),
-  JWT_ISSUER: z.string().min(1).default('graft-gateway'),
+  // --- Auth: verify gateway-issued agent JWTs via the gateway's JWKS endpoint ---
+  AUTH_JWKS_URL: z.string().min(1).default('http://localhost:8080/api/auth/jwks'),
+  AUTH_ISSUER: z.string().min(1).default('http://localhost:8080'),
+  AUTH_AUDIENCE: z.string().min(1).default('http://localhost:8080'),
 });
 
 export type ChatServiceEnv = z.infer<typeof chatServiceEnvSchema>;

@@ -1,24 +1,24 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AuthTokenResponse } from "@graft/shared";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/lib/api/auth";
-import { queryKeys } from "@/lib/api/query-keys";
 import { ApiError } from "@/lib/api/http";
-import { clearToken, setToken } from "./token-store";
-import { useToken } from "./use-token";
+import { queryKeys } from "@/lib/api/query-keys";
+import { WEB_URL } from "@/lib/env";
+import { authClient, signOut } from "./client";
+import { clearAccessToken } from "./access-token";
 
 /**
- * Current identity. Enabled only once a token exists, so logged-out renders
- * never fire `/auth/me`. A 401 means the token is stale — clear it and report
- * unauthenticated rather than retrying.
+ * Current identity. Gated on an active Better Auth session (cookie); only then does
+ * it fetch `/auth/me` (which needs the minted JWT). A 401 means the session is gone —
+ * report unauthenticated rather than retrying.
  */
 export function useMe() {
-  const token = useToken();
+  const { data: session } = authClient.useSession();
   return useQuery({
     queryKey: queryKeys.me,
     queryFn: authApi.me,
-    enabled: token !== null,
+    enabled: Boolean(session),
     retry: (failureCount, error) => {
       if (error instanceof ApiError && error.status === 401) return false;
       return failureCount < 2;
@@ -27,58 +27,26 @@ export function useMe() {
   });
 }
 
-/** Whether the user is signed in, plus a loading flag while `/auth/me` resolves. */
+/** Whether the user is signed in, plus loading/error flags for the guard. */
 export function useAuthStatus() {
-  const token = useToken();
+  const session = authClient.useSession();
+  const hasSession = Boolean(session.data);
   const me = useMe();
   return {
-    token,
     user: me.data ?? null,
-    isAuthenticated: token !== null && me.isSuccess,
-    isLoading: token !== null && me.isPending,
-    isError: me.isError,
+    isAuthenticated: hasSession && me.isSuccess,
+    isLoading: session.isPending || (hasSession && me.isPending),
+    isError: me.isError || (!session.isPending && !hasSession),
   };
 }
 
-/** Persist a freshly issued token and prime the identity cache. */
-function adoptSession(queryClient: ReturnType<typeof useQueryClient>, result: AuthTokenResponse) {
-  setToken(result.token);
-  queryClient.setQueryData(queryKeys.me, {
-    id: result.user.id,
-    organizationId: result.user.organizationId,
-    role: result.user.role,
-    email: result.user.email,
-  });
-}
-
-export function useLogin() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: authApi.login,
-    onSuccess: (result) => adoptSession(queryClient, result),
-  });
-}
-
-export function useVerifyEmail() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: authApi.verifyEmail,
-    onSuccess: (result) => adoptSession(queryClient, result),
-  });
-}
-
-export function useSignup() {
-  return useMutation({ mutationFn: authApi.signup });
-}
-
-export function useResendVerification() {
-  return useMutation({ mutationFn: authApi.resendVerification });
-}
-
+/** Signs out (clears the session cookie + cached JWT) and returns to the web login. */
 export function useLogout() {
   const queryClient = useQueryClient();
-  return () => {
-    clearToken();
-    queryClient.removeQueries({ queryKey: queryKeys.me });
+  return async () => {
+    await signOut();
+    clearAccessToken();
+    queryClient.clear();
+    if (typeof window !== "undefined") window.location.href = `${WEB_URL}/login`;
   };
 }

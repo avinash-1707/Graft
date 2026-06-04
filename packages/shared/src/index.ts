@@ -33,3 +33,4 @@ export * from './contracts/chat.js';
 export * from './contracts/widget-config.js';
 
 export * from './constants.js';
+export * from './validate.js';

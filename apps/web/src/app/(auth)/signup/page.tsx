@@ -7,11 +7,11 @@ export default function SignupPage() {
   return (
     <AuthShell
       title="Create your workspace"
-      description="Set up Graft for your team in a minute."
+      description="Set up your organization and start handling support in minutes."
       footer={
         <>
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
+          <Link href="/login" className="text-foreground hover:underline">
             Sign in
           </Link>
         </>

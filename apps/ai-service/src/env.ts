@@ -22,9 +22,10 @@ export const aiServiceEnvSchema = observabilityEnvSchema.extend({
   /** How long a turn handler waits for the analysis result before giving up the live emit. */
   ANALYSIS_WAIT_TIMEOUT_MS: z.coerce.number().int().positive().default(12_000),
 
-  // --- JWT verification (same secret/issuer the gateway signs with) ---
-  JWT_SECRET: z.string().min(32),
-  JWT_ISSUER: z.string().min(1).default('graft-gateway'),
+  // --- Auth: verify gateway-issued JWTs via the gateway's JWKS endpoint ---
+  AUTH_JWKS_URL: z.string().min(1).default('http://localhost:8080/api/auth/jwks'),
+  AUTH_ISSUER: z.string().min(1).default('http://localhost:8080'),
+  AUTH_AUDIENCE: z.string().min(1).default('http://localhost:8080'),
 
   // --- Retrieval tuning ---
   /** Max KB chunks retrieved per turn for grounding the answer. */

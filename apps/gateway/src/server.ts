@@ -2,8 +2,8 @@ import { createEncryptor } from '@graft/crypto';
 import { createDb } from '@graft/db';
 import { createLogger, createMetrics, type Tracing } from '@graft/observability';
 import { buildApp } from './app.js';
+import { createAuth } from './auth/better-auth.js';
 import { createMailer } from './auth/mailer.js';
-import type { JwtConfig } from './auth/jwt.js';
 import { AuthService } from './auth/service.js';
 import type { GatewayEnv } from './env.js';
 import { SERVICE_NAME } from './telemetry.js';
@@ -29,12 +29,21 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
 
   const { db, close: closeDb } = createDb({ connectionString: env.DATABASE_URL });
   const mailer = createMailer(env, logger);
-  const authService = new AuthService({ db, mailer, logger, env });
-  const jwtConfig: JwtConfig = {
-    secret: env.JWT_SECRET,
-    issuer: env.JWT_ISSUER,
-    accessTtlSeconds: env.JWT_ACCESS_TTL_SECONDS,
-  };
+  const auth = createAuth({
+    db,
+    mailer,
+    logger,
+    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.BETTER_AUTH_URL,
+    trustedOrigins: [env.WEB_ORIGIN, env.DASHBOARD_ORIGIN],
+    ...(env.AUTH_COOKIE_DOMAIN ? { cookieDomain: env.AUTH_COOKIE_DOMAIN } : {}),
+    otp: {
+      length: env.OTP_LENGTH,
+      expiresInSeconds: Math.round(env.OTP_TTL_MS / 1000),
+      maxAttempts: env.OTP_MAX_ATTEMPTS,
+    },
+  });
+  const authService = new AuthService({ auth, db, mailer, logger });
   const encryptor = createEncryptor({
     keyBase64: env.AI_KEY_ENCRYPTION_KEY,
     keyId: env.AI_KEY_ENCRYPTION_KEY_ID,
@@ -46,8 +55,8 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     logger,
     metrics,
     db,
+    auth,
     authService,
-    jwtConfig,
     encryptor,
     isReady: () => ready,
   });

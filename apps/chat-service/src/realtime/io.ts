@@ -1,4 +1,4 @@
-import type { JwtVerifyConfig } from '@graft/auth';
+import type { JwtVerifier } from '@graft/auth';
 import { getConversationForOrg, type Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
 import {
@@ -36,7 +36,7 @@ type ChatServer = Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, S
 export interface SocketServerDeps {
   httpServer: HttpServer;
   db: Database;
-  jwtConfig: JwtVerifyConfig;
+  verifier: JwtVerifier;
   metrics: Metrics;
   logger: Logger;
   serviceName: string;
@@ -99,7 +99,7 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
   io.adapter(createAdapter(deps.pub, deps.sub));
 
   io.use((socket, next) => {
-    authenticateSocket(socket.handshake, { db: deps.db, jwtConfig: deps.jwtConfig })
+    authenticateSocket(socket.handshake, { db: deps.db, verifier: deps.verifier })
       .then((identity) => {
         socket.data.identity = identity;
         next();

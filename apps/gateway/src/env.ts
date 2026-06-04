@@ -24,12 +24,25 @@ export const gatewayEnvSchema = observabilityEnvSchema.extend({
   // --- Database ---
   DATABASE_URL: z.string().min(1),
 
-  // --- Auth / JWT ---
-  /** HS256 signing secret; must be long enough to be unguessable. */
-  JWT_SECRET: z.string().min(32),
-  JWT_ISSUER: z.string().min(1).default('graft-gateway'),
-  /** Access-token lifetime in seconds (default 12h). */
-  JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().default(43_200),
+  // --- Auth (Better Auth) ---
+  /** Better Auth signing secret (sessions/OTP); must be long enough to be unguessable. */
+  BETTER_AUTH_SECRET: z.string().min(32),
+  /**
+   * Public base URL the gateway is reached at; Better Auth serves `/api/auth/*` here
+   * and uses it as the JWT issuer + audience. Internal services point their JWKS
+   * verifier at `${BETTER_AUTH_URL}/api/auth/jwks`.
+   */
+  BETTER_AUTH_URL: z.string().min(1).default('http://localhost:8080'),
+  /** Web app origin — hosts the auth pages (login/signup/verify). CORS + trusted origin. */
+  WEB_ORIGIN: z.string().min(1).default('http://localhost:3000'),
+  /** Dashboard origin — the post-login app. CORS + trusted origin. */
+  DASHBOARD_ORIGIN: z.string().min(1).default('http://localhost:3001'),
+  /**
+   * Parent domain to scope the session cookie to (e.g. `.graft.com`) once deployed on
+   * subdomains. Leave unset in local dev — the host-only `localhost` cookie is shared
+   * across ports already.
+   */
+  AUTH_COOKIE_DOMAIN: z.string().min(1).optional(),
 
   // --- One-time codes (email verification / password reset) ---
   OTP_LENGTH: z.coerce.number().int().min(4).max(10).default(6),

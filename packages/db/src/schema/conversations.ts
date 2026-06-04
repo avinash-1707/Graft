@@ -1,7 +1,7 @@
 import { pgTable, uuid, integer, timestamp, index } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations.js';
 import { sessions } from './sessions.js';
-import { users } from './users.js';
+import { users } from './auth.js';
 import { conversationStatePgEnum, escalationTriggerPgEnum } from './enums.js';
 
 export const conversations = pgTable(

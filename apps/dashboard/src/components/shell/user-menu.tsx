@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -10,11 +9,9 @@ import { useAuthStatus, useLogout } from "@/lib/auth/use-auth";
 function UserMenu() {
   const { user } = useAuthStatus();
   const logout = useLogout();
-  const router = useRouter();
 
   function handleLogout() {
-    logout();
-    router.replace("/login");
+    void logout();
   }
 
   return (

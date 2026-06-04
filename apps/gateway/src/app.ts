@@ -1,12 +1,14 @@
+import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import { createJwtVerifier, jwtAuthPlugin } from '@graft/auth';
 import type { Encryptor } from '@graft/crypto';
 import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
+import { fromNodeHeaders } from 'better-auth/node';
 import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
-import type { JwtConfig } from './auth/jwt.js';
+import type { Auth } from './auth/better-auth.js';
 import type { AuthService } from './auth/service.js';
 import type { GatewayEnv } from './env.js';
-import authPlugin from './plugins/auth.js';
 import metricsPlugin from './plugins/metrics.js';
 import widgetAuthPlugin from './plugins/widget-auth.js';
 import { agentRoutes } from './routes/agents.js';
@@ -25,23 +27,23 @@ export interface BuildAppOptions {
   logger: Logger;
   metrics: Metrics;
   db: Database;
+  /** Better Auth instance; serves `/api/auth/*` and issues JWTs. */
+  auth: Auth;
   authService: AuthService;
-  jwtConfig: JwtConfig;
   encryptor: Encryptor;
   /** Readiness gate; flips to false during graceful shutdown. */
   isReady: () => boolean;
 }
 
 /**
- * Constructs the gateway Fastify instance with observability, global rate
- * limiting, health/metrics endpoints, and the downstream routing stub. Pure
- * builder: no listening, no signal handling — the caller owns the lifecycle.
+ * Constructs the gateway Fastify instance: observability, CORS for the dashboard,
+ * the Better Auth handler (`/api/auth/*`), JWKS-backed bearer auth, global rate
+ * limiting, health/metrics, and the application routes. Pure builder: no listening,
+ * no signal handling — the caller owns the lifecycle.
  */
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
-  const { env, logger, metrics, db, authService, jwtConfig, encryptor, isReady } = opts;
+  const { env, logger, metrics, db, auth, authService, encryptor, isReady } = opts;
 
-  // Widen to FastifyBaseLogger so the instance keeps Fastify's default logger
-  // generic (the concrete pino type would diverge under exactOptionalPropertyTypes).
   const loggerInstance: FastifyBaseLogger = logger;
   const app = Fastify({
     loggerInstance,
@@ -51,6 +53,16 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   });
 
   await app.register(metricsPlugin, { metrics });
+
+  // CORS for the browser apps (credentials so the session cookie round-trips). Web
+  // hosts auth; dashboard is the post-login app — both call the gateway.
+  await app.register(cors, {
+    origin: [env.WEB_ORIGIN, env.DASHBOARD_ORIGIN],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 86_400,
+  });
 
   await app.register(rateLimit, {
     global: true,
@@ -83,7 +95,35 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     });
   });
 
-  await app.register(authPlugin, { jwtConfig });
+  // Better Auth owns everything under /api/auth/* (sign-in, OTP, session, JWKS,
+  // /token). Bridge the Fastify request into a WHATWG Request and stream the
+  // Better Auth Response back out.
+  app.route({
+    method: ['GET', 'POST'],
+    url: '/api/auth/*',
+    async handler(request, reply) {
+      const url = new URL(request.url, env.BETTER_AUTH_URL);
+      const headers = fromNodeHeaders(request.raw.headers);
+      const req = new Request(url.toString(), {
+        method: request.method,
+        headers,
+        ...(request.body ? { body: JSON.stringify(request.body) } : {}),
+      });
+      const response = await auth.handler(req);
+      reply.status(response.status);
+      response.headers.forEach((value, key) => reply.header(key, value));
+      return reply.send(response.body ? await response.text() : null);
+    },
+  });
+
+  // Gateway-local protected routes verify the same JWKS-backed JWT the dashboard
+  // sends (the gateway is the signer; it verifies against its own JWKS endpoint).
+  const verifier = createJwtVerifier({
+    jwksUrl: `${env.BETTER_AUTH_URL}/api/auth/jwks`,
+    issuer: env.BETTER_AUTH_URL,
+    audience: env.BETTER_AUTH_URL,
+  });
+  await app.register(jwtAuthPlugin, { verifier });
   await app.register(widgetAuthPlugin, { db });
 
   await app.register(healthRoutes, { isReady });

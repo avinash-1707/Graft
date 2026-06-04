@@ -1,24 +1,24 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 
 import { Spinner } from "@/components/ui/spinner";
+import { WEB_URL } from "@/lib/env";
 import { useAuthStatus } from "@/lib/auth/use-auth";
 
 /**
- * Gates the authenticated app. Redirects to /login when there is no token or
- * the token is rejected, and shows a spinner while `/auth/me` is in flight.
- * Auth is client-side here (token in localStorage) — the gateway still enforces
- * it on every request, so this is UX, not the security boundary.
+ * Gates the authenticated app. When there is no session (or `/auth/me` is rejected)
+ * it sends the user to the web app's login. Auth is enforced by the gateway on every
+ * request — this is UX, not the security boundary.
  */
 function AuthGuard({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const { token, isAuthenticated, isError } = useAuthStatus();
+  const { isAuthenticated, isLoading, isError } = useAuthStatus();
 
   useEffect(() => {
-    if (token === null || isError) router.replace("/login");
-  }, [token, isError, router]);
+    if (!isLoading && (isError || !isAuthenticated)) {
+      window.location.href = `${WEB_URL}/login`;
+    }
+  }, [isAuthenticated, isLoading, isError]);
 
   if (isAuthenticated) return <>{children}</>;
 

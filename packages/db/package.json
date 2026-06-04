@@ -27,7 +27,7 @@
     "@graft/eslint-config": "workspace:*",
     "@graft/tsconfig": "workspace:*",
     "drizzle-kit": "0.31.10",
-    "typescript": "5.7.3"
+    "typescript": "6.0.3"
   },
   "dependencies": {
     "@graft/shared": "workspace:*",

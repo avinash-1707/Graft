@@ -1,4 +1,4 @@
-import { type JwtVerifyConfig } from '@graft/auth';
+import { createJwtVerifier } from '@graft/auth';
 import { createDb } from '@graft/db';
 import { createLogger, createMetrics, type Tracing } from '@graft/observability';
 import { buildApp } from './app.js';
@@ -26,7 +26,11 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
   const { db, close: closeDb } = createDb({ connectionString: env.DATABASE_URL });
   const storage = createStorage(env);
   const queue = createIngestionQueue(env);
-  const jwtConfig: JwtVerifyConfig = { secret: env.JWT_SECRET, issuer: env.JWT_ISSUER };
+  const verifier = createJwtVerifier({
+    jwksUrl: env.AUTH_JWKS_URL,
+    issuer: env.AUTH_ISSUER,
+    audience: env.AUTH_AUDIENCE,
+  });
 
   let ready = true;
   const app = await buildApp({
@@ -36,7 +40,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     db,
     storage,
     queue,
-    jwtConfig,
+    verifier,
     isReady: () => ready,
   });
 

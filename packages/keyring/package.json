@@ -23,7 +23,7 @@
   "devDependencies": {
     "@graft/eslint-config": "workspace:*",
     "@graft/tsconfig": "workspace:*",
-    "typescript": "5.7.3"
+    "typescript": "6.0.3"
   },
   "dependencies": {
     "@graft/ai": "workspace:*",
@@ -31,6 +31,6 @@
     "@graft/db": "workspace:*",
     "@graft/rag": "workspace:*",
     "@graft/shared": "workspace:*",
-    "ai": "6.0.193"
+    "ai": "6.0.196"
   }
 }

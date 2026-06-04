@@ -1,4 +1,4 @@
-import { type JwtVerifyConfig } from '@graft/auth';
+import { createJwtVerifier } from '@graft/auth';
 import { createEncryptor } from '@graft/crypto';
 import { createDb } from '@graft/db';
 import { createLogger, createMetrics, type Tracing } from '@graft/observability';
@@ -47,7 +47,11 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     topK: env.RETRIEVAL_TOP_K,
     analysisWaitTimeoutMs: env.ANALYSIS_WAIT_TIMEOUT_MS,
   });
-  const jwtConfig: JwtVerifyConfig = { secret: env.JWT_SECRET, issuer: env.JWT_ISSUER };
+  const verifier = createJwtVerifier({
+    jwksUrl: env.AUTH_JWKS_URL,
+    issuer: env.AUTH_ISSUER,
+    audience: env.AUTH_AUDIENCE,
+  });
 
   // Subscribe BEFORE listening so an escalation published the instant a turn starts
   // is delivered to the SSE this instance holds (invariant 9).
@@ -61,7 +65,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     conversations,
     answerService,
     registry,
-    jwtConfig,
+    verifier,
     isReady: () => ready,
   });
 

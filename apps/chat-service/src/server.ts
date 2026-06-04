@@ -1,4 +1,4 @@
-import { type JwtVerifyConfig } from '@graft/auth';
+import { createJwtVerifier } from '@graft/auth';
 import { createDb } from '@graft/db';
 import { createLogger, createMetrics, type Tracing } from '@graft/observability';
 import { Redis } from 'ioredis';
@@ -28,7 +28,11 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
   const metrics = createMetrics({ serviceName });
 
   const { db, close: closeDb } = createDb({ connectionString: env.DATABASE_URL });
-  const jwtConfig: JwtVerifyConfig = { secret: env.JWT_SECRET, issuer: env.JWT_ISSUER };
+  const verifier = createJwtVerifier({
+    jwksUrl: env.AUTH_JWKS_URL,
+    issuer: env.AUTH_ISSUER,
+    audience: env.AUTH_AUDIENCE,
+  });
 
   let ready = true;
   const app = await buildApp({ logger, metrics, isReady: () => ready });
@@ -51,7 +55,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
   const io = createSocketServer({
     httpServer: app.server,
     db,
-    jwtConfig,
+    verifier,
     metrics,
     logger,
     serviceName,

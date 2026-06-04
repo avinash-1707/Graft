@@ -1,4 +1,4 @@
-import { jwtAuthPlugin, widgetAuthPlugin, type JwtVerifyConfig } from '@graft/auth';
+import { jwtAuthPlugin, widgetAuthPlugin, type JwtVerifier } from '@graft/auth';
 import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
 import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
@@ -25,7 +25,7 @@ export interface BuildAppOptions {
   conversations: ConversationService;
   answerService: AnswerService;
   registry: ConnectionRegistry;
-  jwtConfig: JwtVerifyConfig;
+  verifier: JwtVerifier;
   /** Readiness gate; flips to false during graceful shutdown. */
   isReady: () => boolean;
 }
@@ -37,7 +37,7 @@ export interface BuildAppOptions {
  * signal handling; the caller owns the lifecycle.
  */
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
-  const { logger, metrics, db, conversations, answerService, registry, jwtConfig, isReady } = opts;
+  const { logger, metrics, db, conversations, answerService, registry, verifier, isReady } = opts;
 
   const loggerInstance: FastifyBaseLogger = logger;
   const app = Fastify({ loggerInstance, trustProxy: true });
@@ -65,7 +65,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
 
   // Auth: dashboard/agent JWT verify (for later agent-facing routes) + widget
   // embed-token validation (the SSE customer path). Both are shared via @graft/auth.
-  await app.register(jwtAuthPlugin, { jwtConfig });
+  await app.register(jwtAuthPlugin, { verifier });
   await app.register(widgetAuthPlugin, { db });
 
   await app.register(healthRoutes, { isReady });

@@ -1,5 +1,5 @@
 import multipart from '@fastify/multipart';
-import { jwtAuthPlugin, type JwtVerifyConfig } from '@graft/auth';
+import { jwtAuthPlugin, type JwtVerifier } from '@graft/auth';
 import type { Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
 import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
@@ -18,7 +18,7 @@ export interface BuildAppOptions {
   db: Database;
   storage: Storage;
   queue: IngestionQueue;
-  jwtConfig: JwtVerifyConfig;
+  verifier: JwtVerifier;
   /** Readiness gate; flips to false during graceful shutdown. */
   isReady: () => boolean;
 }
@@ -29,7 +29,7 @@ export interface BuildAppOptions {
  * or signal handling; the caller owns the lifecycle.
  */
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
-  const { env, logger, metrics, db, storage, queue, jwtConfig, isReady } = opts;
+  const { env, logger, metrics, db, storage, queue, verifier, isReady } = opts;
 
   const loggerInstance: FastifyBaseLogger = logger;
   const app = Fastify({ loggerInstance, trustProxy: true });
@@ -56,7 +56,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     });
   });
 
-  await app.register(jwtAuthPlugin, { jwtConfig });
+  await app.register(jwtAuthPlugin, { verifier });
 
   await app.register(healthRoutes, { isReady });
   await app.register(metricsRoutes, { metrics });

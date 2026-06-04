@@ -1,30 +1,36 @@
 import { jwtClaimsSchema, type JwtClaims } from '@graft/shared';
-import { jwtVerify } from 'jose';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-export interface JwtVerifyConfig {
-  secret: string;
+export interface JwtVerifierConfig {
+  /** Better Auth JWKS endpoint, e.g. `${gatewayUrl}/api/auth/jwks`. */
+  jwksUrl: string;
+  /** Expected `iss` — Better Auth uses its base URL. */
   issuer: string;
+  /** Expected `aud` — Better Auth uses its base URL. */
+  audience: string;
 }
 
-const ALG = 'HS256';
+export type JwtVerifier = (token: string) => Promise<JwtClaims>;
 
 /**
- * Verifies a gateway-issued access token (HS256, shared secret + issuer) and
- * returns the typed claims. The gateway is the only signer; internal services only
- * verify. Throws on signature/issuer/expiry/claims failure.
+ * Builds a verifier for gateway-issued (Better Auth) JWTs. Keys are fetched from
+ * the gateway's JWKS endpoint and cached by `jose` (asymmetric EdDSA — no shared
+ * secret). The gateway is the only signer; every internal service verifies with this
+ * one path. Returns the typed claims, or throws on signature/issuer/audience/expiry
+ * or a claims-shape mismatch.
  */
-export async function verifyAccessToken(
-  token: string,
-  config: JwtVerifyConfig,
-): Promise<JwtClaims> {
-  const { payload } = await jwtVerify(token, new TextEncoder().encode(config.secret), {
-    issuer: config.issuer,
-    algorithms: [ALG],
-  });
-  return jwtClaimsSchema.parse({
-    sub: payload.sub,
-    org: payload['org'],
-    role: payload['role'],
-    email: payload['email'],
-  });
+export function createJwtVerifier(config: JwtVerifierConfig): JwtVerifier {
+  const jwks = createRemoteJWKSet(new URL(config.jwksUrl));
+  return async (token: string): Promise<JwtClaims> => {
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer: config.issuer,
+      audience: config.audience,
+    });
+    return jwtClaimsSchema.parse({
+      sub: payload.sub,
+      org: payload['org'],
+      role: payload['role'],
+      email: payload['email'],
+    });
+  };
 }

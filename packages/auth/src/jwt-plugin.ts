@@ -7,7 +7,7 @@ import type {
 } from 'fastify';
 import fp from 'fastify-plugin';
 import { AuthErrors } from './errors.js';
-import { verifyAccessToken, type JwtVerifyConfig } from './jwt.js';
+import type { JwtVerifier } from './jwt.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -23,7 +23,8 @@ declare module 'fastify' {
 }
 
 export interface JwtAuthPluginOptions {
-  jwtConfig: JwtVerifyConfig;
+  /** Verifier built from {@link createJwtVerifier} (JWKS-backed). */
+  verifier: JwtVerifier;
 }
 
 function bearerToken(request: FastifyRequest): string | undefined {
@@ -35,9 +36,9 @@ function bearerToken(request: FastifyRequest): string | undefined {
 }
 
 /**
- * Decorates `authenticate` (verify bearer → `request.authUser`) and `requireRole`.
- * Shared across internal services so the JWT-verify path is defined once. Throws
- * {@link AuthError} on failure, which each service's error handler maps to the
+ * Decorates `authenticate` (verify bearer JWT via JWKS → `request.authUser`) and
+ * `requireRole`. Shared across internal services so the verify path is defined once.
+ * Throws {@link AuthError} on failure, which each service's error handler maps to the
  * stable `{ error: { code, message } }` shape.
  */
 const jwtAuthPlugin: FastifyPluginAsync<JwtAuthPluginOptions> = async (app, opts) => {
@@ -47,7 +48,7 @@ const jwtAuthPlugin: FastifyPluginAsync<JwtAuthPluginOptions> = async (app, opts
     const token = bearerToken(request);
     if (!token) throw AuthErrors.unauthorized();
     try {
-      request.authUser = await verifyAccessToken(token, opts.jwtConfig);
+      request.authUser = await opts.verifier(token);
     } catch {
       throw AuthErrors.unauthorized();
     }

@@ -20,9 +20,10 @@ export const ingestionEnvSchema = observabilityEnvSchema.extend({
   // --- Redis / BullMQ ---
   REDIS_URL: z.string().min(1),
 
-  // --- JWT verification (same secret/issuer the gateway signs with) ---
-  JWT_SECRET: z.string().min(32),
-  JWT_ISSUER: z.string().min(1).default('graft-gateway'),
+  // --- Auth: verify gateway-issued JWTs via the gateway's JWKS endpoint ---
+  AUTH_JWKS_URL: z.string().min(1).default('http://localhost:8080/api/auth/jwks'),
+  AUTH_ISSUER: z.string().min(1).default('http://localhost:8080'),
+  AUTH_AUDIENCE: z.string().min(1).default('http://localhost:8080'),
 
   // --- Object storage (S3-compatible: AWS S3 or MinIO) ---
   S3_BUCKET: z.string().min(1),

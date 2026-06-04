@@ -1,4 +1,4 @@
-import { normalizeOrigin, verifyAccessToken, type JwtVerifyConfig } from '@graft/auth';
+import { normalizeOrigin, type JwtVerifier } from '@graft/auth';
 import {
   findOrganizationByEmbedToken,
   findSessionForOrg,
@@ -16,7 +16,7 @@ export type ChatIdentity =
 
 export interface SocketAuthDeps {
   db: Database;
-  jwtConfig: JwtVerifyConfig;
+  verifier: JwtVerifier;
 }
 
 /** Thrown to reject a handshake; the message is not surfaced to the client verbatim. */
@@ -43,7 +43,7 @@ export async function authenticateSocket(
   const token = str(auth.token);
   if (token) {
     try {
-      const claims = await verifyAccessToken(token, deps.jwtConfig);
+      const claims = await deps.verifier(token);
       return { kind: 'AGENT', organizationId: claims.org, agentId: claims.sub };
     } catch {
       throw new SocketAuthError('invalid token');
