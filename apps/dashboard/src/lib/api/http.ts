@@ -16,10 +16,14 @@ export class ApiError extends Error {
 
 interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE";
-  /** JSON body; serialized automatically. */
+  /** JSON body; serialized automatically. Ignored when `formData` is set. */
   body?: unknown;
+  /** Multipart payload (e.g. file upload); sent as-is, no content-type override. */
+  formData?: FormData;
   /** Attach the minted bearer JWT. Defaults to true. */
   auth?: boolean;
+  /** Target service base URL. Defaults to the gateway (`API_URL`). */
+  baseUrl?: string;
   signal?: AbortSignal;
 }
 
@@ -38,19 +42,21 @@ async function doFetch(
   options: RequestOptions,
   attachToken: boolean,
 ): Promise<Response> {
-  const { method = "GET", body, signal } = options;
+  const { method = "GET", body, formData, signal, baseUrl = API_URL } = options;
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["content-type"] = "application/json";
+  // Let the browser set the multipart boundary for FormData; only set JSON otherwise.
+  if (formData === undefined && body !== undefined) headers["content-type"] = "application/json";
   if (attachToken) {
     const token = await getAccessToken();
     if (token) headers["authorization"] = `Bearer ${token}`;
   }
 
   const init: RequestInit = { method, headers, credentials: "include" };
-  if (body !== undefined) init.body = JSON.stringify(body);
+  if (formData !== undefined) init.body = formData;
+  else if (body !== undefined) init.body = JSON.stringify(body);
   if (signal) init.signal = signal;
 
-  return fetch(`${API_URL}${path}`, init);
+  return fetch(`${baseUrl}${path}`, init);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { KbDocumentType } from '@graft/shared';
 import type { Database } from '../client.js';
 import { kbDocuments } from '../schema/kb-documents.js';
@@ -39,6 +39,18 @@ export async function createKbDocument(
 /** Loads a document by id (worker needs fileType + org to process it). */
 export async function getKbDocument(db: Database, id: string): Promise<KbDocumentRow | undefined> {
   return db.query.kbDocuments.findFirst({ where: eq(kbDocuments.id, id) });
+}
+
+/** Lists an org's KB documents, newest first (for the owner's management UI). */
+export async function listKbDocumentsByOrg(
+  db: Database,
+  organizationId: string,
+): Promise<KbDocumentRow[]> {
+  return db
+    .select()
+    .from(kbDocuments)
+    .where(eq(kbDocuments.organizationId, organizationId))
+    .orderBy(desc(kbDocuments.createdAt));
 }
 
 /** Marks a document PROCESSING (worker picked up the job). */

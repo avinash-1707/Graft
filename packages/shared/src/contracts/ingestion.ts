@@ -31,6 +31,28 @@ export const uploadKbDocumentResponseSchema = z.object({
 });
 export type UploadKbDocumentResponse = z.infer<typeof uploadKbDocumentResponseSchema>;
 
+/**
+ * Safe projection of a KB document for the owner's management UI. Carries ingestion
+ * status + the failure reason (when FAILED); never exposes the storage key or bytes.
+ */
+export const kbDocumentSummarySchema = z.object({
+  id: kbDocumentIdSchema,
+  filename: z.string(),
+  fileType: kbDocumentTypeSchema,
+  status: kbDocumentStatusSchema,
+  byteSize: z.number().int().nonnegative(),
+  error: z.string().nullable(),
+  createdAt: z.string(),
+  processedAt: z.string().nullable(),
+});
+export type KbDocumentSummary = z.infer<typeof kbDocumentSummarySchema>;
+
+/** Owner's document list, newest first. */
+export const listKbDocumentsResponseSchema = z.object({
+  documents: z.array(kbDocumentSummarySchema),
+});
+export type ListKbDocumentsResponse = z.infer<typeof listKbDocumentsResponseSchema>;
+
 /** Deterministic, collision-free object-storage key for a tenant's KB document. */
 export function kbObjectKey(organizationId: string, documentId: string): string {
   return `kb/${organizationId}/${documentId}`;

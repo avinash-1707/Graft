@@ -1,6 +1,19 @@
 import { randomUUID } from 'node:crypto';
-import { createKbDocument, markKbDocumentFailed, type Database } from '@graft/db';
-import { kbDocumentIdSchema, kbObjectKey, type UploadKbDocumentResponse } from '@graft/shared';
+import {
+  createKbDocument,
+  listKbDocumentsByOrg,
+  markKbDocumentFailed,
+  type Database,
+  type KbDocumentRow,
+} from '@graft/db';
+import {
+  kbDocumentIdSchema,
+  kbDocumentSummarySchema,
+  kbObjectKey,
+  type KbDocumentSummary,
+  type ListKbDocumentsResponse,
+  type UploadKbDocumentResponse,
+} from '@graft/shared';
 import type { FastifyPluginAsync } from 'fastify';
 import { Errors } from '../errors.js';
 import type { IngestionQueue } from '../queue/ingestion-queue.js';
@@ -92,4 +105,29 @@ export const kbUploadRoutes: FastifyPluginAsync<KbUploadRouteOptions> = async (a
       return reply.code(202).send(body);
     },
   );
+
+  // Owner's document list with live ingestion status. Org-scoped from the JWT.
+  app.get(
+    '/kb/documents',
+    { preHandler: [app.authenticate, app.requireRole('OWNER')] },
+    async (request): Promise<ListKbDocumentsResponse> => {
+      const organizationId = request.authUser!.org;
+      const rows = await listKbDocumentsByOrg(db, organizationId);
+      return { documents: rows.map(toSummary) };
+    },
+  );
 };
+
+/** Projects a DB row to the safe client summary (timestamps → ISO strings). */
+function toSummary(row: KbDocumentRow): KbDocumentSummary {
+  return kbDocumentSummarySchema.parse({
+    id: row.id,
+    filename: row.filename,
+    fileType: row.fileType,
+    status: row.status,
+    byteSize: row.byteSize,
+    error: row.error,
+    createdAt: row.createdAt.toISOString(),
+    processedAt: row.processedAt ? row.processedAt.toISOString() : null,
+  });
+}

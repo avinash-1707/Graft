@@ -9,3 +9,7 @@ export const API_URL =
 
 export const WEB_URL =
   process.env.NEXT_PUBLIC_WEB_URL?.replace(/\/+$/, "") ?? "http://localhost:3000";
+
+/** Ingestion-service base URL — runs on its own host/port, handles KB upload + list. */
+export const INGESTION_URL =
+  process.env.NEXT_PUBLIC_INGESTION_URL?.replace(/\/+$/, "") ?? "http://localhost:8082";

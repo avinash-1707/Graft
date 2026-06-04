@@ -1,3 +1,4 @@
+import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import { jwtAuthPlugin, type JwtVerifier } from '@graft/auth';
 import type { Database } from '@graft/db';
@@ -35,6 +36,16 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   const app = Fastify({ loggerInstance, trustProxy: true });
 
   await app.register(metricsPlugin, { metrics });
+
+  // CORS for the dashboard, which uploads/lists KB documents directly (bearer JWT,
+  // no cookie). Web origin allowed too for symmetry with the gateway.
+  await app.register(cors, {
+    origin: [env.WEB_ORIGIN, env.DASHBOARD_ORIGIN],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86_400,
+  });
+
   await app.register(multipart, {
     limits: { fileSize: env.MAX_UPLOAD_BYTES, files: 1 },
   });

@@ -171,6 +171,24 @@
   }
 }
 
+/* One-shot entrance for list items (keyed stably so polling never re-triggers it).
+   Initial hidden state lives only in the 0% frame, so the reduced-motion path below
+   still lands content fully visible. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: rise-in 0.3s var(--ease-out) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

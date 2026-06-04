@@ -6,4 +6,5 @@ export const queryKeys = {
   widgetConfig: ["config", "widget"] as const,
   escalationConfig: ["config", "escalation"] as const,
   agents: ["agents"] as const,
+  kbDocuments: ["kb", "documents"] as const,
 };

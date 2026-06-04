@@ -20,6 +20,10 @@ export const ingestionEnvSchema = observabilityEnvSchema.extend({
   // --- Redis / BullMQ ---
   REDIS_URL: z.string().min(1),
 
+  // --- CORS: browser apps that upload/list KB documents directly ---
+  WEB_ORIGIN: z.string().min(1).default('http://localhost:3000'),
+  DASHBOARD_ORIGIN: z.string().min(1).default('http://localhost:3001'),
+
   // --- Auth: verify gateway-issued JWTs via the gateway's JWKS endpoint ---
   AUTH_JWKS_URL: z.string().min(1).default('http://localhost:8080/api/auth/jwks'),
   AUTH_ISSUER: z.string().min(1).default('http://localhost:8080'),
