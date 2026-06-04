@@ -1,74 +1,77 @@
-# Ops — full stack, observability, and realtime load test (unit 29)
+# Ops — infra stack, observability assets, and realtime load test (unit 29)
 
-This directory runs Graft end to end on Docker, with a unified observability stack
-(metrics + logs + traces) and a Node load-test harness that exercises the realtime
+The default Docker stack here is **infra-only**: Postgres, Redis, and MinIO, plus
+two one-shot bootstrap jobs (Drizzle migrate, MinIO bucket init). The app services
+run **on the host** via pnpm against those datastores — see
+[Run the apps on the host](#2-run-the-apps-on-the-host).
+
+The multi-instance topology (2× ai-service + 2× chat-service behind an Nginx LB)
+and the observability stack are **not** in `compose.yaml` anymore. Their config
+still lives under `ops/nginx` and `ops/observability` and is used by the unit-29
+load test (see [the load test](#4-run-the-load-test)), which stresses the realtime
 paths: the SSE↔WS transport switch, atomic claim contention, and cross-instance
 Redis Pub/Sub fan-out.
-
-To stress those paths the stack runs **two ai-service and two chat-service
-instances** behind an Nginx load balancer (ai round-robins; chat is sticky for WS
-affinity, invariant 13). Both pools share one Redis, so broadcasts fan out across
-instances via the Socket.IO Redis adapter / the ai-service realtime bus.
 
 ## Layout
 
 ```
 ops/
-  compose.yaml                 full stack: datastores + services (2x ai, 2x chat) + nginx + obs
-  docker/Dockerfile            one multi-stage image, parameterised by workspace package
-  nginx/nginx.conf             ai pool (round-robin, SSE) + chat pool (sticky, WS)
+  compose.yaml                 infra only: postgres + redis + minio + migrate/bucket-init
+  docker/Dockerfile            one multi-stage image (used by the migrate job)
+  nginx/nginx.conf             load-test LB: ai pool (round-robin, SSE) + chat pool (sticky, WS)
   observability/
     prometheus/                scrape config (all services, both instances)
     tempo/ loki/ promtail/     traces, logs, log shipping (Docker SD)
     otel-collector/            OTLP receiver → Tempo
     grafana/                   provisioned datasources (cross-linked) + dashboards
   load-test/                   @graft/load-test — Node/TS harness (scenarios)
-  .env.example                 copy to .env before `up`
 ```
 
-## 1. Bring the stack up
+## 1. Bring the infra up
 
 ```bash
-cp ops/.env.example ops/.env
-# edit ops/.env: set BETTER_AUTH_SECRET (openssl rand -base64 36)
-docker compose -f ops/compose.yaml --env-file ops/.env up -d --build
+docker compose -f ops/compose.yaml up -d
 ```
 
 Host ports:
 
-| URL                         | What                                   |
-| --------------------------- | -------------------------------------- |
-| http://localhost:8080       | gateway (public ingress)               |
-| http://localhost:8082       | ingestion-service                      |
-| http://localhost:8090       | nginx → ai-service pool (widget SSE)    |
-| http://localhost:8091       | nginx → chat-service pool (agent WS)    |
-| http://localhost:8093/8094  | ai-service instance 1 / 2 (direct)      |
-| http://localhost:8101/8102  | chat-service instance 1 / 2 (direct)    |
-| http://localhost:3300       | Grafana (anonymous admin)              |
-| http://localhost:9009       | Prometheus                             |
-| http://localhost:9001       | MinIO console (minioadmin / minioadmin)|
+| URL                          | What                                    |
+| ---------------------------- | --------------------------------------- |
+| postgres://localhost:5432    | Postgres (graft / graft)                |
+| redis://localhost:6379       | Redis                                   |
+| http://localhost:9000        | MinIO S3 API                            |
+| http://localhost:9001        | MinIO console (minioadmin / minioadmin) |
 
-The `migrate` service runs the Drizzle migrations once against Postgres before the
-app services start; `minio-init` creates the `graft-kb` bucket.
+The `migrate` job runs the Drizzle migrations once against Postgres; `minio-init`
+creates the `graft-kb` bucket. Both exit when done (`docker compose ps` shows them
+`Exited (0)`); Postgres/Redis/MinIO stay up.
 
-## 2. Observability
+## 2. Run the apps on the host
 
-Open Grafana at http://localhost:3300 → **Dashboards → Graft**:
+```bash
+cp .env.example .env        # at the repo root; set BETTER_AUTH_SECRET
+pnpm install
+pnpm build                  # or: pnpm --filter <app> build
 
-- **Realtime** — active SSE/WS connections per instance, state transitions, claim
-  wins per instance (fan-out), escalations.
-- **HTTP RED** — request rate, 5xx rate, p50/p95 latency per service.
-- **AI Pipeline** — LLM calls + latency by provider, BullMQ queue depth, escalations
-  by trigger.
+# each backend in its own terminal (loads ../../.env via --env-file-if-exists):
+pnpm --filter @graft/gateway start            # :8080
+pnpm --filter @graft/ai-service start         # :8083
+pnpm --filter @graft/ai-service start:worker
+pnpm --filter @graft/chat-service start       # :8084
+pnpm --filter @graft/ingestion-service start  # :8082
+pnpm --filter @graft/ingestion-service start:worker
 
-The three datasources cross-link: a Loki log line links to its Tempo trace by
-`trace_id` (derived field), and a Tempo span links back to its logs and to the
-Prometheus service map. Metrics come from each service's `/metrics`, traces flow
-service → OTel Collector → Tempo, logs flow container stdout → Promtail → Loki.
+# frontends (Next loads its own .env*; localhost defaults already point at :8080):
+pnpm --filter @graft/web dev                  # :3000
+pnpm --filter @graft/dashboard dev            # :3001
+```
+
+App-port reference: gateway `:8080`, ingestion `:8082`, ai-service `:8083`,
+chat-service `:8084`, web `:3000`, dashboard `:3001`.
 
 ## 3. Seed a tenant (required for the load test)
 
-The realtime flows need a real tenant. Once the stack is up:
+The realtime flows need a real tenant. Once the apps are running:
 
 1. Sign up an owner (web app, or `POST http://localhost:8080/api/auth/sign-up/email`).
 2. In the dashboard: add `http://localhost:3000` (or your `ORIGIN`) to the widget
@@ -79,6 +82,13 @@ The realtime flows need a real tenant. Once the stack is up:
    `{ "token": "..." }`.
 
 ## 4. Run the load test
+
+> The load test exercises the **multi-instance** topology (2× ai + 2× chat behind
+> the Nginx LB) and reads the Grafana dashboards — neither is in `compose.yaml`
+> anymore. To run it you must first bring that topology up yourself from the
+> `ops/nginx` + `ops/observability` configs (e.g. a separate compose file or run
+> multiple host instances on the ports below). The default infra stack alone is a
+> single instance per service and won't satisfy `pubsub-fanout`.
 
 ```bash
 export EMBED_TOKEN=<tenant embed token>
@@ -96,14 +106,15 @@ pnpm --filter @graft/load-test load pubsub-fanout
 | `claim-contention` | N agents race one conversation → exactly one wins (atomic CAS)      |
 | `pubsub-fanout`    | agent A on instance 1, agent B on instance 2 → B receives A's message via the Redis adapter |
 
-Defaults target the compose ports (`AI_URL` :8090, `CHAT_URL` :8091,
-`CHAT_INSTANCE_URLS` :8101,:8102). Watch the **Realtime** dashboard while they run.
+Defaults target the old multi-instance LB ports (`AI_URL` :8090, `CHAT_URL` :8091,
+`CHAT_INSTANCE_URLS` :8101,:8102); override these env vars to match however you
+bring the topology up. Watch the **Realtime** dashboard while they run.
 
 ## Notes / caveats
 
-- The service image ships the full workspace install (correctness over size); for a
-  slim production image, switch the Dockerfile to `pnpm deploy` with a per-package
-  `files` allow-list.
+- `compose.yaml` is infra-only; the app services run on the host. The Dockerfile
+  is now used only by the one-shot `migrate` job. For a slim production image,
+  switch it to `pnpm deploy` with a per-package `files` allow-list.
 - Nginx `ip_hash` pins by client IP, so the single-host harness uses the **direct**
   per-instance chat ports (8101/8102) for the fan-out scenario.
 - This stack and harness were authored offline and are **not runtime-verified** in

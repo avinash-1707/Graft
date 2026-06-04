@@ -182,25 +182,32 @@ MODEL_INVOKED > NEGATIVE_SENTIMENT`. The transition is an atomic compare-and-set
 - PostgreSQL 18 + pgvector 0.8.2, Redis, and an S3-compatible store (MinIO) — or use the
   Docker stack in `ops/`, which provides all three.
 
-### Run the full stack with Docker
+### Run infra with Docker, apps on the host
 
-The `ops/` directory runs everything end to end — datastores, every service (2× ai/chat
-behind Nginx), and the full observability stack:
+The `ops/` compose stack is **infra-only** — Postgres, Redis, MinIO, plus one-shot
+Drizzle-migrate and bucket-init jobs. The app services run directly from the host:
 
 ```bash
-cp ops/.env.example ops/.env       # set BETTER_AUTH_SECRET=$(openssl rand -base64 36)
-docker compose -f ops/compose.yaml --env-file ops/.env up -d --build
+docker compose -f ops/compose.yaml up -d   # postgres :5432, redis :6379, minio :9000/:9001
+cp .env.example .env                        # set BETTER_AUTH_SECRET=$(openssl rand -base64 36)
+pnpm install && pnpm build
 ```
 
-See [`ops/README.md`](ops/README.md) for the host-port table, the Grafana dashboards, and
-the realtime load test.
-
-### Run locally for development
+Then start each app in its own terminal (backends load `.env` automatically via
+`node --env-file-if-exists`):
 
 ```bash
-pnpm install                        # install the workspace
-pnpm --filter @graft/db db:migrate  # run migrations (needs DATABASE_URL)
-pnpm dev                            # turbo: run every app in watch mode
+pnpm --filter @graft/gateway start          # :8080  (+ ai/chat/ingestion start[:worker])
+pnpm --filter @graft/web dev                # :3000  (dashboard dev → :3001)
+```
+
+See [`ops/README.md`](ops/README.md) for the full per-app start list, the host-port
+table, and the realtime load test (which needs the multi-instance topology).
+
+### Run every app in watch mode
+
+```bash
+pnpm dev                            # turbo: build/watch every app
 ```
 
 Each app reads its own environment (see the per-app READMEs). At minimum every backend
@@ -268,7 +275,7 @@ service also exposes `GET /healthz`, `GET /readyz`, and `GET /metrics` (Promethe
 graft/
 ├── apps/          gateway · ai-service · chat-service · ingestion-service · widget · dashboard · web
 ├── packages/      shared · db · auth · crypto · keyring · rag · ai · observability · tsconfig · eslint-config
-├── ops/           docker-compose stack, Dockerfile, Nginx LB, Grafana/Prometheus/Tempo/Loki, load-test harness
+├── ops/           infra-only compose (postgres/redis/minio), Dockerfile; load-test + Nginx/observability configs
 └── README.md
 ```
 

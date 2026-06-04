@@ -7,8 +7,8 @@
   "scripts": {
     "build": "tsc -p .",
     "dev": "tsc -p . --watch --preserveWatchOutput",
-    "start": "node dist/index.js",
-    "start:worker": "node dist/worker/index.js",
+    "start": "node --env-file-if-exists=../../.env dist/index.js",
+    "start:worker": "node --env-file-if-exists=../../.env dist/worker/index.js",
     "check-types": "tsc -p . --noEmit",
     "lint": "eslint .",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
