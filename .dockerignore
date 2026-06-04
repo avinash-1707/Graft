@@ -1,0 +1,14 @@
+# Keep the build context small + force a clean install/build inside the image.
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/*.tsbuildinfo
+.git
+.github
+**/.env
+**/.env.*
+!**/.env.example
+ops/observability
+ops/nginx
+ops/README.md
