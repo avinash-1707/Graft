@@ -19,7 +19,7 @@ anonymous session within one organization.
   On a `transport_switch` signal it drops SSE / opens WS (or vice versa) off durable
   state, reconnects with `lastSequence` to replay anything missed, and shows only
   **"You are now talking to a human agent"** / **"…an AI agent"** — never any technical
-  detail (invariant 3). See `context/transport-architecture.md`.
+  detail (invariant 3).
 - **Theming:** appearance (colors, bot name, greeting, preset, launcher position) comes
   from the tenant's widget config.
 
