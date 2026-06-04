@@ -1,17 +1,17 @@
-import { Settings } from "lucide-react";
-
 import { PageHeader } from "@/components/common/page-header";
-import { EmptyState } from "@/components/common/empty-state";
+import { AiProviderSection } from "@/components/settings/ai-provider-section";
+import { WidgetConfigSection } from "@/components/settings/widget-config-section";
+import { EscalationSection } from "@/components/settings/escalation-section";
 
 export default function SettingsPage() {
   return (
     <>
       <PageHeader title="Settings" description="Provider keys, widget appearance, and escalation rules." />
-      <EmptyState
-        icon={Settings}
-        title="Configuration is coming"
-        description="Connect your AI provider, customize the chat widget, and tune when conversations escalate to a person. These screens arrive in an upcoming release."
-      />
+      <div className="space-y-6">
+        <AiProviderSection />
+        <WidgetConfigSection />
+        <EscalationSection />
+      </div>
     </>
   );
 }
