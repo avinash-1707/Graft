@@ -323,6 +323,36 @@
 }
 
 /* ----------------------------------------------------------------------------
+   Auth backdrop — static stage for the auth route group (no WebGL). Two soft
+   brand glows + a faint grid masked to fade toward the edges. Theme-aware.
+---------------------------------------------------------------------------- */
+.auth-backdrop {
+  background-color: var(--l-base);
+  background-image:
+    radial-gradient(58rem 40rem at 84% -14%, rgba(216, 64, 64, 0.18), transparent 60%),
+    radial-gradient(52rem 44rem at -8% 112%, rgba(142, 22, 22, 0.16), transparent 58%);
+}
+
+.auth-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--l-line2) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--l-line2) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.6;
+  -webkit-mask-image: radial-gradient(125% 95% at 50% -12%, #000 28%, transparent 72%);
+  mask-image: radial-gradient(125% 95% at 50% -12%, #000 28%, transparent 72%);
+}
+
+.dark .auth-backdrop {
+  background-image:
+    radial-gradient(58rem 40rem at 84% -14%, rgba(216, 64, 64, 0.2), transparent 60%),
+    radial-gradient(54rem 46rem at -8% 112%, rgba(142, 22, 22, 0.34), transparent 60%);
+}
+
+/* ----------------------------------------------------------------------------
    Auth card — login/signup switch: a height-animated stage with a direction-
    aware crossfade between the two forms, toggled by the text prompt below.
 ---------------------------------------------------------------------------- */

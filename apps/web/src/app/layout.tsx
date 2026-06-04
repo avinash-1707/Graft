@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/site/ThemeProvider";
 import { SmoothScroll } from "@/components/site/SmoothScroll";
-import { Component as AnimatedBackground } from "@/components/ui/raycast-animated-background";
 
 export const metadata: Metadata = {
   title: "Graft, support that feels like one warm conversation",
@@ -25,9 +24,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <ThemeProvider>
           <SmoothScroll>
-            <AnimatedBackground />
+            {/* Grain sits above the per-section backdrop (-z-10) and below content
+                (z-10). Each route group supplies its own backdrop. */}
             <div className="grain" aria-hidden="true" />
-            <div className="relative z-10">{children}</div>
+            {children}
           </SmoothScroll>
         </ThemeProvider>
       </body>
