@@ -288,6 +288,86 @@
   }
 }
 
+/* ----------------------------------------------------------------------------
+   Nav shell — the bar is bare at the top of the page (transparent, no border,
+   no blur) and the glass chrome materializes once the user scrolls. State is
+   toggled via data-scrolled by the client; only paint props transition so it
+   stays on the compositor.
+---------------------------------------------------------------------------- */
+.nav-shell {
+  background-color: transparent;
+  border: 1px solid transparent;
+  box-shadow: 0 0 0 0 transparent;
+  backdrop-filter: blur(0) saturate(100%);
+  -webkit-backdrop-filter: blur(0) saturate(100%);
+  transition:
+    background-color 0.4s var(--ease-out),
+    border-color 0.4s var(--ease-out),
+    box-shadow 0.4s var(--ease-out),
+    backdrop-filter 0.4s var(--ease-out),
+    -webkit-backdrop-filter 0.4s var(--ease-out);
+}
+
+.nav-shell[data-scrolled="true"] {
+  background-color: var(--l-glass);
+  border-color: var(--l-glass-border);
+  box-shadow: var(--l-glass-shadow);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-shell {
+    transition: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Auth card — segmented login/signup toggle with a sliding pill, a height-
+   animated stage, and a direction-aware crossfade between the two forms.
+---------------------------------------------------------------------------- */
+.auth-toggle-pill {
+  background: var(--l-glass);
+  border: 1px solid var(--l-glass-border);
+  box-shadow: var(--l-glass-shadow);
+  transition: transform 0.42s var(--ease-out);
+}
+
+.auth-stage {
+  /* Clip the taller form as the height grows; the small margin keeps focus
+     rings on the fields from being shaved at the edges. */
+  overflow: clip;
+  overflow-clip-margin: 6px;
+  transition: height 0.42s var(--ease-out);
+}
+
+.auth-swap {
+  animation: auth-swap 0.42s var(--ease-out) both;
+}
+
+@keyframes auth-swap {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--auth-dir, 1) * 16px));
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-toggle-pill,
+  .auth-stage {
+    transition: none;
+  }
+  .auth-swap {
+    animation: none;
+  }
+}
+
 /* Animated gradient ink for the emphasised word. */
 .hero-word {
   background-image: linear-gradient(

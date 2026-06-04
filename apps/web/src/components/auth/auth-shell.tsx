@@ -27,8 +27,8 @@ function AuthShell({
   children,
   footer,
 }: {
-  title: ReactNode;
-  description: string;
+  title?: ReactNode;
+  description?: string;
   children: ReactNode;
   footer?: ReactNode;
 }) {
@@ -87,12 +87,16 @@ function AuthShell({
             className="intro-down glass w-full max-w-md rounded-2xl p-7 sm:p-9"
             style={{ animationDelay: "120ms" }}
           >
-            <div className="mb-7 flex flex-col gap-2">
-              <h2 className="font-display text-2xl leading-tight tracking-tight text-ink">
-                {title}
-              </h2>
-              <p className="text-sm leading-relaxed text-dim">{description}</p>
-            </div>
+            {title ? (
+              <div className="mb-7 flex flex-col gap-2">
+                <h2 className="font-display text-2xl leading-tight tracking-tight text-ink">
+                  {title}
+                </h2>
+                {description ? (
+                  <p className="text-sm leading-relaxed text-dim">{description}</p>
+                ) : null}
+              </div>
+            ) : null}
 
             {children}
 
