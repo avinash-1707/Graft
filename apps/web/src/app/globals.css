@@ -323,16 +323,9 @@
 }
 
 /* ----------------------------------------------------------------------------
-   Auth card — segmented login/signup toggle with a sliding pill, a height-
-   animated stage, and a direction-aware crossfade between the two forms.
+   Auth card — login/signup switch: a height-animated stage with a direction-
+   aware crossfade between the two forms, toggled by the text prompt below.
 ---------------------------------------------------------------------------- */
-.auth-toggle-pill {
-  background: var(--l-glass);
-  border: 1px solid var(--l-glass-border);
-  box-shadow: var(--l-glass-shadow);
-  transition: transform 0.42s var(--ease-out);
-}
-
 .auth-stage {
   /* Clip the taller form as the height grows; the small margin keeps focus
      rings on the fields from being shaved at the edges. */
@@ -359,7 +352,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-toggle-pill,
   .auth-stage {
     transition: none;
   }
