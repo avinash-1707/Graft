@@ -93,6 +93,9 @@ importers:
 
   apps/chat-service:
     dependencies:
+      '@fastify/cors':
+        specifier: 11.2.0
+        version: 11.2.0
       '@graft/auth':
         specifier: workspace:*
         version: link:../../packages/auth

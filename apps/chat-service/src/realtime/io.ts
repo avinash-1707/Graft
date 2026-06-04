@@ -1,5 +1,5 @@
 import type { JwtVerifier } from '@graft/auth';
-import { getConversationForOrg, type Database } from '@graft/db';
+import { getConversationForOrg, toOrgFeedConversation, type Database } from '@graft/db';
 import type { Logger, Metrics } from '@graft/observability';
 import {
   CHAT_EVENTS,
@@ -26,6 +26,7 @@ import { Server, type DefaultEventsMap } from 'socket.io';
 import type { ClaimService } from '../claim/service.js';
 import type { MessagingService, SwitchEffect } from '../messaging/service.js';
 import { authenticateSocket, SocketAuthError, type ChatIdentity } from './auth.js';
+import { publishOrgFeed } from './org-feed.js';
 
 interface SocketData {
   identity: ChatIdentity;
@@ -97,6 +98,22 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
     cors: { origin: true },
   });
   io.adapter(createAdapter(deps.pub, deps.sub));
+
+  // Dashboard live feed (unit 27): mirror the human-side transitions/messages onto the
+  // org-feed bus so agents observing the read-only feed see claims, agent replies, the
+  // HUMAN_ACTIVE flip, and handback. Re-reads the row for an upsert so the projected
+  // card is always current; fire-and-forget — the feed never blocks the chat turn.
+  const publishFeedUpsert = (organizationId: string, conversationId: string): void => {
+    void getConversationForOrg(deps.db, conversationId, organizationId)
+      .then((row) => {
+        if (!row) return;
+        publishOrgFeed(deps.pub, deps.logger, organizationId, {
+          type: 'conversation_upsert',
+          conversation: toOrgFeedConversation(row),
+        });
+      })
+      .catch((err: unknown) => deps.logger.warn({ err }, 'org-feed upsert read failed'));
+  };
 
   io.use((socket, next) => {
     authenticateSocket(socket.handshake, { db: deps.db, verifier: deps.verifier })
@@ -218,6 +235,7 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
               trigger: null,
             }),
           );
+          publishFeedUpsert(identity.organizationId, conversationId);
         }
         ack?.(result);
       })().catch((err: unknown) => {
@@ -249,6 +267,15 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
         // First agent message flips AGENT_ASSIGNED → HUMAN_ACTIVE: announce before the
         // message so the customer's widget is on WS when the bubble lands.
         if (result.switch) emitSwitch(io, conversationId, result.switch);
+
+        // Mirror onto the dashboard live feed (unit 27): the message, and — on the
+        // first agent message — the HUMAN_ACTIVE state change.
+        publishOrgFeed(deps.pub, deps.logger, identity.organizationId, {
+          type: 'message',
+          conversationId: result.message.conversationId,
+          message: result.message,
+        });
+        if (result.switch) publishFeedUpsert(identity.organizationId, conversationId);
 
         // Relay to the OTHER participant(s); the sender gets the authoritative row in
         // the ack (avoids a duplicate). Clients dedup on sequence regardless.
@@ -288,6 +315,7 @@ export function createSocketServer(deps: SocketServerDeps): ChatServer {
 
         // Switch the customer back to the AI transport (SSE); the widget reopens SSE.
         emitSwitch(io, parsed.data.conversationId, result.switch);
+        publishFeedUpsert(identity.organizationId, parsed.data.conversationId);
         ack?.({ ok: true });
       })().catch((err: unknown) => {
         deps.logger.error({ err }, 'conversation handback failed');

@@ -1,4 +1,10 @@
-import { AI_REALTIME_CHANNEL, realtimeMessageSchema, type ServerEvent } from '@graft/shared';
+import {
+  AI_REALTIME_CHANNEL,
+  ORG_FEED_CHANNEL,
+  realtimeMessageSchema,
+  type OrgFeedBusEvent,
+  type ServerEvent,
+} from '@graft/shared';
 import type { FastifyBaseLogger } from 'fastify';
 import { Redis } from 'ioredis';
 import type { ConnectionRegistry } from './connection-registry.js';
@@ -8,6 +14,11 @@ export interface EventBus {
   publishEvent(conversationId: string, event: ServerEvent): Promise<void>;
   /** Publishes an abort for the conversation's in-flight generation (cross-instance). */
   publishAbort(conversationId: string): Promise<void>;
+  /**
+   * Publishes an org-tagged conversation event to the dashboard live feed (unit 27).
+   * Fanned out by the chat-service feed subscriber to the org's SSE connections.
+   */
+  publishOrgFeed(organizationId: string, event: OrgFeedBusEvent): Promise<void>;
   /** Starts the subscriber, dispatching incoming messages to the registry (HTTP only). */
   subscribe(registry: ConnectionRegistry): Promise<void>;
   close(): Promise<void>;
@@ -36,6 +47,10 @@ export function createEventBus(redisUrl: string, logger: FastifyBaseLogger): Eve
         AI_REALTIME_CHANNEL,
         JSON.stringify({ kind: 'abort', conversationId }),
       );
+    },
+
+    async publishOrgFeed(organizationId, event) {
+      await publisher.publish(ORG_FEED_CHANNEL, JSON.stringify({ organizationId, event }));
     },
 
     subscribe(registry) {

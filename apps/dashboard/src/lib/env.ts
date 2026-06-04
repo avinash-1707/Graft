@@ -13,3 +13,7 @@ export const WEB_URL =
 /** Ingestion-service base URL — runs on its own host/port, handles KB upload + list. */
 export const INGESTION_URL =
   process.env.NEXT_PUBLIC_INGESTION_URL?.replace(/\/+$/, "") ?? "http://localhost:8082";
+
+/** Chat-service base URL — hosts the org-feed SSE (live conversation feed, unit 27). */
+export const CHAT_URL =
+  process.env.NEXT_PUBLIC_CHAT_URL?.replace(/\/+$/, "") ?? "http://localhost:8084";

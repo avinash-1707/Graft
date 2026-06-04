@@ -22,6 +22,10 @@ export const chatServiceEnvSchema = observabilityEnvSchema.extend({
   AUTH_JWKS_URL: z.string().min(1).default('http://localhost:8080/api/auth/jwks'),
   AUTH_ISSUER: z.string().min(1).default('http://localhost:8080'),
   AUTH_AUDIENCE: z.string().min(1).default('http://localhost:8080'),
+
+  // --- CORS: browser apps that open the org-feed SSE directly (bearer JWT) ---
+  WEB_ORIGIN: z.string().min(1).default('http://localhost:3000'),
+  DASHBOARD_ORIGIN: z.string().min(1).default('http://localhost:3001'),
 });
 
 export type ChatServiceEnv = z.infer<typeof chatServiceEnvSchema>;

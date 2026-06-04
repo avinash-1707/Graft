@@ -23,6 +23,9 @@ import {
   type AiInferenceStatus,
   type Conversation,
   type EscalationTrigger as EscalationTriggerType,
+  type Message,
+  type OrgFeedBusEvent,
+  type OrgFeedConversation,
   type ServerEvent,
 } from '@graft/shared';
 import type { FastifyBaseLogger } from 'fastify';
@@ -30,6 +33,7 @@ import { randomUUID } from 'node:crypto';
 import type { ConversationService } from '../conversation/service.js';
 import type { EscalationService } from '../escalation/service.js';
 import type { AnalysisQueue } from '../queue/analysis-queue.js';
+import type { EventBus } from '../realtime/event-bus.js';
 
 export interface StreamTurnParams {
   organizationId: string;
@@ -56,6 +60,8 @@ export interface AnswerServiceDeps {
   conversations: ConversationService;
   escalation: EscalationService;
   analysisQueue: AnalysisQueue;
+  /** Org-feed fan-out for the dashboard live feed (unit 27). */
+  bus: EventBus;
   /** Max KB chunks retrieved per turn. */
   topK: number;
   /** How long to wait for the analysis result before giving up the live emit. */
@@ -83,6 +89,7 @@ export class AnswerService {
   private readonly conversations: ConversationService;
   private readonly escalation: EscalationService;
   private readonly analysisQueue: AnalysisQueue;
+  private readonly bus: EventBus;
   private readonly topK: number;
   private readonly analysisWaitTimeoutMs: number;
 
@@ -92,8 +99,51 @@ export class AnswerService {
     this.conversations = deps.conversations;
     this.escalation = deps.escalation;
     this.analysisQueue = deps.analysisQueue;
+    this.bus = deps.bus;
     this.topK = deps.topK;
     this.analysisWaitTimeoutMs = deps.analysisWaitTimeoutMs;
+  }
+
+  /** Projects a resolved conversation to the read-only org-feed card shape. */
+  private static feedConversation(c: Conversation): OrgFeedConversation {
+    return {
+      id: c.id,
+      sessionId: c.sessionId,
+      state: c.state,
+      assignedAgentId: c.assignedAgentId,
+      escalationTrigger: c.escalationTrigger,
+      lastSequence: c.lastSequence,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    };
+  }
+
+  /**
+   * Best-effort publish to the dashboard live feed (unit 27). The feed is auxiliary;
+   * a Redis hiccup must never fail or stall the customer's turn, so failures are
+   * swallowed with a log and the publish is fire-and-forget.
+   */
+  private publishFeed(
+    organizationId: string,
+    event: OrgFeedBusEvent,
+    log: FastifyBaseLogger,
+  ): void {
+    void this.bus
+      .publishOrgFeed(organizationId, event)
+      .catch((err: unknown) => log.warn({ err }, 'org-feed publish failed'));
+  }
+
+  /** Publishes a newly-appended message to the org feed so agents observe the exchange. */
+  private publishFeedMessage(
+    organizationId: string,
+    message: Message,
+    log: FastifyBaseLogger,
+  ): void {
+    this.publishFeed(
+      organizationId,
+      { type: 'message', conversationId: message.conversationId, message },
+      log,
+    );
   }
 
   async streamTurn(params: StreamTurnParams): Promise<void> {
@@ -105,6 +155,12 @@ export class AnswerService {
       sessionId,
     );
     onConversation?.(conversation);
+    // Surface the conversation on the dashboard live feed (new or resumed) before the turn.
+    this.publishFeed(
+      organizationId,
+      { type: 'conversation_upsert', conversation: AnswerService.feedConversation(conversation) },
+      log,
+    );
 
     // History BEFORE appending the new turn. SYSTEM events are never placed in the
     // LLM context (invariant 8); the prompt appends the customer message itself.
@@ -121,6 +177,7 @@ export class AnswerService {
       clientNonce,
     });
     emit({ type: 'message_appended', message: customerMessage });
+    if (!deduped) this.publishFeedMessage(organizationId, customerMessage, log);
 
     // The AI responds only while it controls the conversation (invariant 3); once a
     // human controls it the chat-service path (unit 20) handles the turn.
@@ -269,6 +326,7 @@ export class AnswerService {
           groundingScore: grounding.topSimilarity,
         });
         emit({ type: 'message_appended', message });
+        this.publishFeedMessage(organizationId, message, log);
         persistedMessageId = message.id;
       }
 

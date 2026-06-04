@@ -1,9 +1,50 @@
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
-import type { ConversationState, EscalationTrigger } from '@graft/shared';
+import {
+  orgFeedConversationSchema,
+  type ConversationState,
+  type EscalationTrigger,
+  type OrgFeedConversation,
+} from '@graft/shared';
 import type { Database } from '../client.js';
 import { conversations } from '../schema/conversations.js';
 
 export type ConversationRow = typeof conversations.$inferSelect;
+
+/** Cap on the live-feed snapshot — an org with more active conversations than this is degenerate. */
+const ACTIVE_CONVERSATIONS_LIMIT = 200;
+
+/**
+ * Active (non-CLOSED) conversations for an org, most-recently-updated first. Backs the
+ * dashboard live-feed snapshot (unit 27) — the read-only overview an agent sees on
+ * connect, before live upserts/messages stream in over the org-feed bus.
+ */
+export async function listActiveConversationsByOrg(
+  db: Database,
+  organizationId: string,
+): Promise<ConversationRow[]> {
+  return db.query.conversations.findMany({
+    where: and(
+      eq(conversations.organizationId, organizationId),
+      ne(conversations.state, 'CLOSED'),
+    ),
+    orderBy: desc(conversations.updatedAt),
+    limit: ACTIVE_CONVERSATIONS_LIMIT,
+  });
+}
+
+/** Projects a conversation row to the read-only org-feed card shape (unit 27). */
+export function toOrgFeedConversation(row: ConversationRow): OrgFeedConversation {
+  return orgFeedConversationSchema.parse({
+    id: row.id,
+    sessionId: row.sessionId,
+    state: row.state,
+    assignedAgentId: row.assignedAgentId,
+    escalationTrigger: row.escalationTrigger,
+    lastSequence: row.lastSequence,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  });
+}
 
 export interface CreateConversationInput {
   organizationId: string;

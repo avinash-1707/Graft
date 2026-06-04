@@ -1,4 +1,4 @@
-import { transitionToEscalationPending, type Database } from '@graft/db';
+import { toOrgFeedConversation, transitionToEscalationPending, type Database } from '@graft/db';
 import type { Metrics } from '@graft/observability';
 import { ConversationState, type EscalationTrigger } from '@graft/shared';
 import type { EventBus } from '../realtime/event-bus.js';
@@ -51,6 +51,12 @@ export class EscalationService {
       input.conversationId,
       escalationStateChangedEvent(input.conversationId, input.trigger),
     );
+    // Reflect the new state on the dashboard live feed (unit 27). Published from the
+    // single transition site, so both inline and worker escalations surface exactly once.
+    await this.bus.publishOrgFeed(input.organizationId, {
+      type: 'conversation_upsert',
+      conversation: toOrgFeedConversation(row),
+    });
     return { transitioned: true };
   }
 }

@@ -8,6 +8,7 @@ import type { ChatServiceEnv } from './env.js';
 import { MessagingService } from './messaging/service.js';
 import { createAiAbortPublisher } from './realtime/ai-bus.js';
 import { createSocketServer } from './realtime/io.js';
+import { OrgFeedHub, subscribeOrgFeed } from './realtime/org-feed.js';
 import { SERVICE_NAME } from './telemetry.js';
 
 export interface StartOptions {
@@ -34,8 +35,24 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     audience: env.AUTH_AUDIENCE,
   });
 
+  // Live-feed registry (unit 27) + its own Redis subscriber. A subscribed ioredis
+  // client can't issue other commands, so the org-feed channel needs a connection
+  // separate from the Socket.IO adapter pair.
+  const hub = new OrgFeedHub();
+  const feedSub = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
+  feedSub.on('error', (err) => logger.error({ err }, 'org-feed redis error (sub)'));
+  subscribeOrgFeed(feedSub, hub, logger);
+
   let ready = true;
-  const app = await buildApp({ logger, metrics, isReady: () => ready });
+  const app = await buildApp({
+    logger,
+    metrics,
+    db,
+    verifier,
+    hub,
+    corsOrigins: [env.WEB_ORIGIN, env.DASHBOARD_ORIGIN],
+    isReady: () => ready,
+  });
 
   // Socket.IO adapter needs two Redis connections (one subscribes, so it can't also
   // issue normal commands). Attach io to Fastify's HTTP server before listening.
@@ -87,6 +104,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
         io.disconnectSockets(true);
         pub.disconnect();
         sub.disconnect();
+        feedSub.disconnect();
         await app.close();
         await closeDb();
         await tracing.shutdown();

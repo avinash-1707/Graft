@@ -44,6 +44,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     conversations,
     escalation,
     analysisQueue,
+    bus,
     topK: env.RETRIEVAL_TOP_K,
     analysisWaitTimeoutMs: env.ANALYSIS_WAIT_TIMEOUT_MS,
   });
