@@ -59,7 +59,7 @@ export function Hero() {
           className="intro-down mt-11 flex flex-wrap items-center justify-center gap-3"
           style={{ animationDelay: "0.38s" }}
         >
-          <Button href="/signup">
+          <Button href="/auth?mode=signup">
             Get started
             <ArrowIcon className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
           </Button>

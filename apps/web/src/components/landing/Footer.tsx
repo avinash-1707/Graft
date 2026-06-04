@@ -12,8 +12,8 @@ const groups = [
   {
     heading: "Get started",
     links: [
-      { label: "Create an account", href: "/signup" },
-      { label: "Sign in", href: "/login" },
+      { label: "Create an account", href: "/auth?mode=signup" },
+      { label: "Sign in", href: "/auth" },
     ],
   },
 ];

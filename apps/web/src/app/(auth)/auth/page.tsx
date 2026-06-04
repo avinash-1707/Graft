@@ -2,12 +2,12 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { AuthCard } from "@/components/auth/auth-card";
 import { Alert } from "@/components/ui/alert";
 
-export default async function LoginPage({
+export default async function AuthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ verified?: string; reset?: string }>;
+  searchParams: Promise<{ mode?: string; verified?: string; reset?: string }>;
 }) {
-  const { verified, reset } = await searchParams;
+  const { mode, verified, reset } = await searchParams;
   const notice = verified ? (
     <Alert tone="success">Email verified. You can sign in now.</Alert>
   ) : reset ? (
@@ -16,7 +16,7 @@ export default async function LoginPage({
 
   return (
     <AuthShell>
-      <AuthCard initialMode="login" notice={notice} />
+      <AuthCard initialMode={mode === "signup" ? "signup" : "login"} notice={notice} />
     </AuthShell>
   );
 }

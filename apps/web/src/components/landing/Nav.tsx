@@ -73,10 +73,10 @@ export function Nav() {
           style={{ animationDelay: "0.36s" }}
         >
           <ModeToggle />
-          <Button href="/login" variant="ghost" className="hidden sm:inline-flex">
+          <Button href="/auth" variant="ghost" className="hidden sm:inline-flex">
             Sign in
           </Button>
-          <Button href="/signup">Get started</Button>
+          <Button href="/auth?mode=signup">Get started</Button>
         </div>
       </nav>
     </header>

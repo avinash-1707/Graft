@@ -46,7 +46,7 @@ function ResetForm({ email }: { email: string }) {
       setFormError("That code is invalid or has expired.");
       return;
     }
-    router.push("/login?reset=1");
+    router.push("/auth?reset=1");
   }
 
   return (

@@ -10,14 +10,14 @@ export default async function VerifyEmailPage({
   searchParams: Promise<{ email?: string }>;
 }) {
   const { email } = await searchParams;
-  if (!email) redirect("/signup");
+  if (!email) redirect("/auth?mode=signup");
 
   return (
     <AuthShell
       title="Verify your email"
       description="One quick step to secure your account."
       footer={
-        <Link href="/login" className="text-foreground hover:underline">
+        <Link href="/auth" className="text-foreground hover:underline">
           Back to sign in
         </Link>
       }

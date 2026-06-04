@@ -59,40 +59,13 @@ function AuthCard({
     setHasSwitched(true);
     setMode(next);
     // Keep the URL in sync without a navigation so a refresh restores the mode.
-    window.history.replaceState(null, "", next === "login" ? "/login" : "/signup");
+    window.history.replaceState(null, "", next === "signup" ? "/auth?mode=signup" : "/auth");
   }
 
   const copy = COPY[mode];
 
   return (
     <div className="w-full">
-      {/* Segmented mode toggle with a sliding pill. */}
-      <div
-        role="tablist"
-        aria-label="Authentication mode"
-        className="relative mb-7 grid grid-cols-2 rounded-xl border border-line2 bg-white/5 p-1 dark:bg-white/[0.03]"
-      >
-        <span
-          aria-hidden="true"
-          className="auth-toggle-pill absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-lg"
-          style={{ transform: `translateX(${mode === "signup" ? "100%" : "0%"})` }}
-        />
-        {(["login", "signup"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            role="tab"
-            aria-selected={mode === m}
-            onClick={() => switchTo(m)}
-            className={`relative z-10 rounded-lg py-2 text-sm font-medium transition-colors duration-200 ${
-              mode === m ? "text-ink" : "text-dim hover:text-soft"
-            }`}
-          >
-            {m === "login" ? "Sign in" : "Sign up"}
-          </button>
-        ))}
-      </div>
-
       {mode === "login" && notice ? <div className="mb-5">{notice}</div> : null}
 
       {/* Height-animated stage; swapped content crossfades + slides per mode. */}
@@ -113,6 +86,18 @@ function AuthCard({
             {mode === "login" ? <LoginForm /> : <SignupForm />}
           </div>
         </div>
+      </div>
+
+      {/* Mode switch — a text prompt, not a navigation. */}
+      <div className="mt-6 border-t border-line2 pt-5 text-center text-sm text-dim">
+        {mode === "login" ? "New to Graft? " : "Already have an account? "}
+        <button
+          type="button"
+          onClick={() => switchTo(mode === "login" ? "signup" : "login")}
+          className="font-medium text-ink hover:underline"
+        >
+          {mode === "login" ? "Create an account" : "Sign in"}
+        </button>
       </div>
     </div>
   );

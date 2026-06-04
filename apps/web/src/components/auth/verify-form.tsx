@@ -39,7 +39,7 @@ function VerifyForm({ email }: { email: string }) {
       setFormError("That code is invalid or has expired.");
       return;
     }
-    router.push("/login?verified=1");
+    router.push("/auth?verified=1");
   }
 
   async function resend() {

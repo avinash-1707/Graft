@@ -35,7 +35,7 @@ export function ClosingCta() {
             </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
               <a
-                href="/signup"
+                href="/auth?mode=signup"
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#f6efef] px-5 py-2.5 text-[0.95rem] font-medium text-[#1d1616] shadow-[0_14px_34px_-14px_rgba(0,0,0,0.6)] transition-[transform,filter] duration-200 ease-out hover:brightness-95 motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-px"
               >
                 Get started
