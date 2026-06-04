@@ -1,7 +1,6 @@
-import { getAiSettings, hasAiProviderKey, upsertAiSettings, type Database } from '@graft/db';
+import { getAiSettings, upsertAiSettings, type Database } from '@graft/db';
 import { setAiSettingsRequestSchema, type AiSettings } from '@graft/shared';
 import type { FastifyPluginAsync } from 'fastify';
-import { AuthErrors } from '../auth/errors.js';
 import { parseOr400 } from '../http/validate.js';
 
 interface AiSettingsRouteOptions {
@@ -9,9 +8,9 @@ interface AiSettingsRouteOptions {
 }
 
 /**
- * Owner-only provider-selection settings: which keyring provider is used for chat
- * vs embeddings. A selection is only accepted if the org actually holds a key for
- * that provider (else 400). Clearing to null is always allowed. Scope is the
+ * Owner-only model-selection settings: which OpenRouter model serves chat vs
+ * embeddings. Both run on the org's single OpenRouter key (set via the keyring
+ * route). `null` clears a selection back to the platform default. Scope is the
  * owner's JWT org.
  */
 export const aiSettingsRoutes: FastifyPluginAsync<AiSettingsRouteOptions> = async (app, opts) => {
@@ -27,20 +26,13 @@ export const aiSettingsRoutes: FastifyPluginAsync<AiSettingsRouteOptions> = asyn
     if (!data) return;
     const orgId = request.authUser!.org;
 
-    if (data.chatProvider && !(await hasAiProviderKey(db, orgId, data.chatProvider))) {
-      throw AuthErrors.badRequest(`No API key configured for ${data.chatProvider}.`);
-    }
-    if (data.embeddingProvider && !(await hasAiProviderKey(db, orgId, data.embeddingProvider))) {
-      throw AuthErrors.badRequest(`No API key configured for ${data.embeddingProvider}.`);
-    }
-
     await upsertAiSettings(db, orgId, {
-      chatProvider: data.chatProvider,
-      embeddingProvider: data.embeddingProvider,
+      chatModel: data.chatModel,
+      embeddingModel: data.embeddingModel,
     });
     return reply.send({
-      chatProvider: data.chatProvider,
-      embeddingProvider: data.embeddingProvider,
+      chatModel: data.chatModel,
+      embeddingModel: data.embeddingModel,
     } satisfies AiSettings);
   });
 };

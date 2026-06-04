@@ -44,8 +44,8 @@ export async function processAnalysisJob(
     return { escalated: false, trigger: null };
   }
 
-  const { provider, apiKey } = await resolveChatModel(deps.db, deps.encryptor, data.organizationId);
-  const classification = await classifyTurn({ provider, apiKey, text: data.text });
+  const { apiKey, modelId } = await resolveChatModel(deps.db, deps.encryptor, data.organizationId);
+  const classification = await classifyTurn({ apiKey, model: modelId, text: data.text });
 
   let trigger: EscalationTrigger | null = null;
 

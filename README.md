@@ -42,8 +42,9 @@ switches between them automatically.
 
 ### Setting up an organization
 
-A business signs up and becomes the _owner_. The owner connects an AI provider by pasting
-their own OpenAI or Anthropic key (Graft encrypts it and never exposes it again), uploads
+A business signs up and becomes the _owner_. The owner connects AI by pasting their own
+OpenRouter key (Graft encrypts it and never exposes it again) and optionally picking which
+OpenRouter models serve chat and embeddings, uploads
 knowledge as PDF, DOCX, or plain text, customizes the widget, configures when the AI
 should escalate to a human, and invites support agents. Finally they embed one line of
 HTML on their site — no backend changes required.
@@ -139,7 +140,7 @@ Each app has its own README with routes, environment, and layout.
 - **Language / runtime:** TypeScript (strict), Node ≥ 22 (24 LTS target), ESM.
 - **Monorepo:** pnpm workspaces and Turborepo.
 - **Backend:** Fastify 5. Realtime over SSE (AI) and Socket.IO 4.8 (human) with Redis Pub/Sub.
-- **AI:** Vercel AI SDK (`ai`) with `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`.
+- **AI:** Vercel AI SDK (`ai`) routed through OpenRouter via `@openrouter/ai-sdk-provider` (chat + embeddings on one tenant key).
 - **Data:** PostgreSQL 18 + pgvector 0.8.2, Drizzle ORM. BullMQ on Redis for queues.
 - **Object storage:** S3 (production) / MinIO (dev) via `@aws-sdk/client-s3`.
 - **Frontend:** React 19, Next.js 16, Vite 8, Tailwind v4, shadcn (Base UI), TanStack Query.

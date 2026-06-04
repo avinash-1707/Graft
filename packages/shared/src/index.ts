@@ -2,7 +2,6 @@ export * from './enums/conversation-state.js';
 export * from './enums/message-role.js';
 export * from './enums/escalation-trigger.js';
 export * from './enums/ai-provider.js';
-export * from './enums/embedding-provider.js';
 export * from './enums/ai-inference-status.js';
 export * from './enums/user-role.js';
 export * from './enums/kb-document-type.js';

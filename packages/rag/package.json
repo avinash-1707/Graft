@@ -26,8 +26,7 @@
     "typescript": "6.0.3"
   },
   "dependencies": {
-    "@ai-sdk/google": "3.0.80",
-    "@ai-sdk/openai": "3.0.67",
+    "@openrouter/ai-sdk-provider": "2.9.0",
     "@graft/db": "workspace:*",
     "@graft/shared": "workspace:*",
     "ai": "6.0.196",

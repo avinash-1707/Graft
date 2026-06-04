@@ -1,9 +1,9 @@
 import type { Encryptor } from '@graft/crypto';
 import { getAiProviderCredentialSecret, getAiSettings, type Database } from '@graft/db';
-import { createEmbedder, type Embedder } from '@graft/rag';
+import { createEmbedder, DEFAULT_EMBEDDING_MODEL, type Embedder } from '@graft/rag';
 import { decryptApiKey } from './decrypt.js';
 
-/** Thrown when the org has no embedding provider selected or its key is missing. */
+/** Thrown when the org has no OpenRouter key configured. */
 export class EmbeddingProviderUnavailableError extends Error {
   constructor(message: string) {
     super(message);
@@ -12,29 +12,27 @@ export class EmbeddingProviderUnavailableError extends Error {
 }
 
 /**
- * Resolves the tenant's embedding provider + decrypted key into an {@link Embedder}.
- * The provider is the org's `ai_settings.embedding_provider`; its key comes from the
- * keyring and is decrypted in-memory only here. Shared by the ingestion worker
- * (chunk embedding) and ai-service (query embedding) so the resolution lives once.
+ * Resolves the tenant's OpenRouter key + chosen embedding model into an
+ * {@link Embedder}. The key is decrypted in-memory only here; the model is
+ * `ai_settings.embedding_model` or {@link DEFAULT_EMBEDDING_MODEL}. Shared by the
+ * ingestion worker (chunk embedding) and ai-service (query embedding) so the
+ * resolution lives once.
  */
 export async function resolveEmbedder(
   db: Database,
   encryptor: Encryptor,
   organizationId: string,
 ): Promise<Embedder> {
-  const { embeddingProvider } = await getAiSettings(db, organizationId);
-  if (!embeddingProvider) {
-    throw new EmbeddingProviderUnavailableError(
-      'no embedding provider selected for this organization',
-    );
-  }
-
-  const secret = await getAiProviderCredentialSecret(db, organizationId, embeddingProvider);
+  const secret = await getAiProviderCredentialSecret(db, organizationId);
   if (!secret) {
     throw new EmbeddingProviderUnavailableError(
-      `no ${embeddingProvider} API key configured for this organization`,
+      'no OpenRouter API key configured for this organization',
     );
   }
 
-  return createEmbedder({ provider: embeddingProvider, apiKey: decryptApiKey(encryptor, secret) });
+  const { embeddingModel } = await getAiSettings(db, organizationId);
+  return createEmbedder({
+    apiKey: decryptApiKey(encryptor, secret),
+    model: embeddingModel ?? DEFAULT_EMBEDDING_MODEL,
+  });
 }

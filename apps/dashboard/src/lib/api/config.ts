@@ -1,6 +1,5 @@
 import type {
   AiCredentialStatus,
-  AiProvider,
   AiSettings,
   EscalationConfig,
   SetAiProviderCredentialRequest,
@@ -16,16 +15,15 @@ import { apiFetch } from "./http";
  * defaults, PUT is a full-document upsert.
  */
 export const configApi = {
-  /** Keyring: the set of providers that have a stored key (never the key itself). */
+  /** Keyring: whether an OpenRouter key is stored (never the key itself). */
   getAiProviders: () => apiFetch<AiCredentialStatus>("/org/ai-providers"),
-  /** Set or rotate one provider's key; echoes the refreshed keyring status. */
+  /** Set or rotate the OpenRouter key; echoes the refreshed keyring status. */
   setAiProvider: (body: SetAiProviderCredentialRequest) =>
     apiFetch<AiCredentialStatus>("/org/ai-providers", { method: "PUT", body }),
-  /** Remove a provider's key (also clears any settings selection pointing at it). */
-  deleteAiProvider: (provider: AiProvider) =>
-    apiFetch<void>(`/org/ai-providers/${provider}`, { method: "DELETE" }),
+  /** Remove the OpenRouter key. */
+  deleteAiProvider: () => apiFetch<void>("/org/ai-providers", { method: "DELETE" }),
 
-  /** Which provider the tenant uses for chat vs. embeddings (independent axes). */
+  /** Which OpenRouter model the tenant uses for chat vs. embeddings (null = default). */
   getAiSettings: () => apiFetch<AiSettings>("/org/ai-settings"),
   setAiSettings: (body: SetAiSettingsRequest) =>
     apiFetch<AiSettings>("/org/ai-settings", { method: "PUT", body }),

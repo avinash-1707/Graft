@@ -26,8 +26,7 @@
     "typescript": "6.0.3"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "3.0.81",
-    "@ai-sdk/openai": "3.0.67",
+    "@openrouter/ai-sdk-provider": "2.9.0",
     "@graft/rag": "workspace:*",
     "@graft/shared": "workspace:*",
     "ai": "6.0.196",

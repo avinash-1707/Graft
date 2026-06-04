@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AI_PROVIDERS,
-  CHAT_PROVIDERS,
-  EMBEDDING_PROVIDERS,
+  DEFAULT_CHAT_MODEL,
+  DEFAULT_EMBEDDING_MODEL,
+  openRouterModelSchema,
   setAiProviderCredentialRequestSchema,
-  type AiProvider,
-  type ChatProvider,
-  type EmbeddingProvider,
+  SUGGESTED_CHAT_MODELS,
+  SUGGESTED_EMBEDDING_MODELS,
+  type AiSettings,
 } from "@graft/shared";
 import { Check, Trash2 } from "lucide-react";
 
@@ -25,47 +25,30 @@ import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { SettingsCard } from "./settings-card";
 
-const PROVIDER_LABELS: Record<AiProvider, string> = {
-  OPENAI: "OpenAI",
-  ANTHROPIC: "Anthropic",
-  GEMINI: "Google Gemini",
-};
+const CUSTOM = "__custom__";
 
 export function AiProviderSection() {
-  const queryClient = useQueryClient();
   const keyring = useQuery({ queryKey: queryKeys.aiProviders, queryFn: configApi.getAiProviders });
   const settings = useQuery({ queryKey: queryKeys.aiSettings, queryFn: configApi.getAiSettings });
 
-  const configured = new Set(keyring.data?.credentials.map((c) => c.provider) ?? []);
+  const configured = keyring.data?.configured ?? false;
 
   return (
     <SettingsCard
-      title="AI provider"
-      description="Store an API key for each provider, then choose which one answers chats and which embeds your knowledge base."
+      title="OpenRouter"
+      description="Store your OpenRouter API key, then choose which model answers chats and which embeds your knowledge base. Both run on this one key."
       isLoading={keyring.isPending}
     >
       <div className="space-y-6">
-        <div className="space-y-3">
-          {AI_PROVIDERS.map((provider) => (
-            <ProviderKeyRow
-              key={provider}
-              provider={provider}
-              configured={configured.has(provider)}
-            />
-          ))}
-        </div>
+        <OpenRouterKeyRow configured={configured} updatedAt={keyring.data?.updatedAt ?? null} />
 
-        {keyring.isError ? <Alert>Could not load provider keys.</Alert> : null}
+        {keyring.isError ? <Alert>Could not load the OpenRouter key.</Alert> : null}
 
         <div className="border-t border-border pt-5">
-          <ProviderSelection
+          <ModelSelection
             disabled={settings.isPending}
-            configured={configured}
-            chatProvider={settings.data?.chatProvider ?? null}
-            embeddingProvider={settings.data?.embeddingProvider ?? null}
-            onChange={() => {
-              void queryClient.invalidateQueries({ queryKey: queryKeys.aiSettings });
-            }}
+            chatModel={settings.data?.chatModel ?? null}
+            embeddingModel={settings.data?.embeddingModel ?? null}
           />
         </div>
       </div>
@@ -73,13 +56,19 @@ export function AiProviderSection() {
   );
 }
 
-function ProviderKeyRow({ provider, configured }: { provider: AiProvider; configured: boolean }) {
+function OpenRouterKeyRow({
+  configured,
+  updatedAt,
+}: {
+  configured: boolean;
+  updatedAt: string | null;
+}) {
   const queryClient = useQueryClient();
   const [apiKey, setApiKey] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const save = useMutation({
-    mutationFn: () => configApi.setAiProvider({ provider, apiKey }),
+    mutationFn: () => configApi.setAiProvider({ apiKey }),
     onSuccess: (status) => {
       queryClient.setQueryData(queryKeys.aiProviders, status);
       setApiKey("");
@@ -89,15 +78,14 @@ function ProviderKeyRow({ provider, configured }: { provider: AiProvider; config
   });
 
   const remove = useMutation({
-    mutationFn: () => configApi.deleteAiProvider(provider),
+    mutationFn: () => configApi.deleteAiProvider(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.aiProviders });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.aiSettings });
     },
   });
 
   function handleSave() {
-    const result = validate(setAiProviderCredentialRequestSchema, { provider, apiKey });
+    const result = validate(setAiProviderCredentialRequestSchema, { apiKey });
     if (!result.ok) {
       setError(result.errors.apiKey ?? "Invalid API key.");
       return;
@@ -109,7 +97,7 @@ function ProviderKeyRow({ provider, configured }: { provider: AiProvider; config
     <div className="rounded-lg border border-border bg-muted/20 p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-medium">
-          {PROVIDER_LABELS[provider]}
+          OpenRouter API key
           {configured ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-normal text-success">
               <Check className="size-3" /> Key set
@@ -124,7 +112,7 @@ function ProviderKeyRow({ provider, configured }: { provider: AiProvider; config
           <Button
             variant="ghost"
             size="icon"
-            aria-label={`Remove ${PROVIDER_LABELS[provider]} key`}
+            aria-label="Remove OpenRouter key"
             disabled={remove.isPending}
             onClick={() => remove.mutate()}
           >
@@ -136,7 +124,7 @@ function ProviderKeyRow({ provider, configured }: { provider: AiProvider; config
         <Input
           type="password"
           autoComplete="off"
-          placeholder={configured ? "Enter a new key to rotate" : "Paste API key"}
+          placeholder={configured ? "Enter a new key to rotate" : "Paste OpenRouter API key"}
           value={apiKey}
           onChange={(e) => {
             setApiKey(e.target.value);
@@ -149,81 +137,147 @@ function ProviderKeyRow({ provider, configured }: { provider: AiProvider; config
         </Button>
       </div>
       {error ? <p className="mt-1.5 text-xs text-destructive">{error}</p> : null}
+      {configured && updatedAt ? (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          Last updated {new Date(updatedAt).toLocaleString()}
+        </p>
+      ) : null}
     </div>
   );
 }
 
-function ProviderSelection({
+function ModelSelection({
   disabled,
-  configured,
-  chatProvider,
-  embeddingProvider,
-  onChange,
+  chatModel,
+  embeddingModel,
 }: {
   disabled: boolean;
-  configured: Set<AiProvider>;
-  chatProvider: ChatProvider | null;
-  embeddingProvider: EmbeddingProvider | null;
-  onChange: () => void;
+  chatModel: string | null;
+  embeddingModel: string | null;
 }) {
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
   const save = useMutation({
-    mutationFn: (next: { chatProvider: ChatProvider | null; embeddingProvider: EmbeddingProvider | null }) =>
-      configApi.setAiSettings(next),
-    onSuccess: () => {
+    mutationFn: (next: AiSettings) => configApi.setAiSettings(next),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.aiSettings, data);
       setError(null);
-      onChange();
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : "Could not save selection."),
   });
 
-  function setChat(value: string) {
-    save.mutate({ chatProvider: value === "" ? null : (value as ChatProvider), embeddingProvider });
-  }
-  function setEmbedding(value: string) {
-    save.mutate({ chatProvider, embeddingProvider: value === "" ? null : (value as EmbeddingProvider) });
+  function commit(next: AiSettings) {
+    // Validate non-null selections before sending; null = platform default.
+    for (const value of [next.chatModel, next.embeddingModel]) {
+      if (value !== null && !validate(openRouterModelSchema, value).ok) {
+        setError("Enter a valid OpenRouter model slug, e.g. anthropic/claude-haiku-4-5");
+        return;
+      }
+    }
+    save.mutate(next);
   }
 
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="chat-provider">Chat provider</Label>
-          <Select
-            id="chat-provider"
-            value={chatProvider ?? ""}
-            disabled={disabled || save.isPending}
-            onChange={(e) => setChat(e.target.value)}
-          >
-            <option value="">Not selected</option>
-            {CHAT_PROVIDERS.map((p) => (
-              <option key={p} value={p} disabled={!configured.has(p)}>
-                {PROVIDER_LABELS[p]}
-                {configured.has(p) ? "" : " (needs key)"}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="embedding-provider">Embedding provider</Label>
-          <Select
-            id="embedding-provider"
-            value={embeddingProvider ?? ""}
-            disabled={disabled || save.isPending}
-            onChange={(e) => setEmbedding(e.target.value)}
-          >
-            <option value="">Not selected</option>
-            {EMBEDDING_PROVIDERS.map((p) => (
-              <option key={p} value={p} disabled={!configured.has(p)}>
-                {PROVIDER_LABELS[p]}
-                {configured.has(p) ? "" : " (needs key)"}
-              </option>
-            ))}
-          </Select>
-        </div>
+        <ModelField
+          id="chat-model"
+          label="Chat model"
+          value={chatModel}
+          defaultModel={DEFAULT_CHAT_MODEL}
+          suggestions={SUGGESTED_CHAT_MODELS}
+          disabled={disabled || save.isPending}
+          onChange={(value) => commit({ chatModel: value, embeddingModel })}
+        />
+        <ModelField
+          id="embedding-model"
+          label="Embedding model"
+          value={embeddingModel}
+          defaultModel={DEFAULT_EMBEDDING_MODEL}
+          suggestions={SUGGESTED_EMBEDDING_MODELS}
+          disabled={disabled || save.isPending}
+          onChange={(value) => commit({ chatModel, embeddingModel: value })}
+        />
       </div>
+      <p className="text-xs text-muted-foreground">
+        Changing the embedding model re-bases your vector space — re-index your knowledge base after
+        switching, and use a 1536-dimension model.
+      </p>
       {error ? <Alert>{error}</Alert> : null}
+    </div>
+  );
+}
+
+function ModelField({
+  id,
+  label,
+  value,
+  defaultModel,
+  suggestions,
+  disabled,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string | null;
+  defaultModel: string;
+  suggestions: readonly string[];
+  disabled: boolean;
+  onChange: (value: string | null) => void;
+}) {
+  const isCustom = value !== null && !suggestions.includes(value);
+  const [custom, setCustom] = useState(isCustom ? value : "");
+  const [showCustom, setShowCustom] = useState(isCustom);
+
+  const selectValue = value === null ? "" : isCustom ? CUSTOM : value;
+
+  function handleSelect(next: string) {
+    if (next === "") {
+      setShowCustom(false);
+      onChange(null);
+    } else if (next === CUSTOM) {
+      setShowCustom(true);
+    } else {
+      setShowCustom(false);
+      onChange(next);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Select
+        id={id}
+        value={selectValue}
+        disabled={disabled}
+        onChange={(e) => handleSelect(e.target.value)}
+      >
+        <option value="">Default ({defaultModel})</option>
+        {suggestions.map((m) => (
+          <option key={m} value={m}>
+            {m}
+          </option>
+        ))}
+        <option value={CUSTOM}>Custom…</option>
+      </Select>
+      {showCustom ? (
+        <div className="flex gap-2">
+          <Input
+            placeholder="vendor/model"
+            value={custom}
+            disabled={disabled}
+            onChange={(e) => setCustom(e.target.value)}
+          />
+          <Button
+            variant="outline"
+            disabled={disabled || custom.trim() === ""}
+            onClick={() => onChange(custom.trim())}
+          >
+            Apply
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import type { ChatProvider } from '@graft/shared';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { createChatModel } from './chat-model.js';
@@ -32,8 +31,7 @@ const turnClassificationSchema = z.object({
 export type TurnClassification = z.infer<typeof turnClassificationSchema>;
 
 export interface ClassifyTurnInput {
-  provider: ChatProvider;
-  /** Tenant's API key for the chosen provider; decrypted in-memory at call time. */
+  /** Tenant's OpenRouter API key; decrypted in-memory at call time. */
   apiKey: string;
   /** Customer text to classify. */
   text: string;
@@ -58,7 +56,6 @@ const CLASSIFIER_SYSTEM =
  */
 export async function classifyTurn(input: ClassifyTurnInput): Promise<TurnClassification> {
   const model = createChatModel({
-    provider: input.provider,
     apiKey: input.apiKey,
     ...(input.model ? { model: input.model } : {}),
   });

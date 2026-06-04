@@ -1,19 +1,12 @@
 import {
   deleteAiProviderCredential,
-  getAiSettings,
-  listAiProviderCredentialStatuses,
+  getAiProviderCredentialStatus,
   upsertAiProviderCredential,
-  upsertAiSettings,
   type Database,
 } from '@graft/db';
 import type { Encryptor } from '@graft/crypto';
-import {
-  aiProviderSchema,
-  setAiProviderCredentialRequestSchema,
-  type AiCredentialStatus,
-} from '@graft/shared';
+import { setAiProviderCredentialRequestSchema, type AiCredentialStatus } from '@graft/shared';
 import type { FastifyPluginAsync } from 'fastify';
-import { z } from 'zod';
 import { parseOr400 } from '../http/validate.js';
 
 interface AiCredentialRouteOptions {
@@ -21,20 +14,18 @@ interface AiCredentialRouteOptions {
   encryptor: Encryptor;
 }
 
-const providerParamsSchema = z.object({ provider: aiProviderSchema });
-
 async function loadStatus(db: Database, orgId: string): Promise<AiCredentialStatus> {
-  const rows = await listAiProviderCredentialStatuses(db, orgId);
+  const row = await getAiProviderCredentialStatus(db, orgId);
   return {
-    credentials: rows.map((r) => ({ provider: r.provider, updatedAt: r.updatedAt.toISOString() })),
+    configured: row !== undefined,
+    updatedAt: row?.updatedAt.toISOString() ?? null,
   };
 }
 
 /**
- * Owner-only AI provider keyring. At most one key per (org, provider); raw keys
- * are encrypted at rest on write and never returned — only the set of configured
- * providers + last-updated time. Deleting a provider's key also clears any
- * `ai_settings` selection that pointed at it. Scope is the owner's JWT org.
+ * Owner-only OpenRouter keyring. Exactly one key per org; the raw key is encrypted at
+ * rest on write and never returned — only whether a key is configured + when it was
+ * last set. Scope is the owner's JWT org.
  */
 export const aiCredentialRoutes: FastifyPluginAsync<AiCredentialRouteOptions> = async (
   app,
@@ -53,7 +44,6 @@ export const aiCredentialRoutes: FastifyPluginAsync<AiCredentialRouteOptions> = 
     const orgId = request.authUser!.org;
     const sealed = encryptor.encrypt(data.apiKey);
     await upsertAiProviderCredential(db, orgId, {
-      provider: data.provider,
       encryptedApiKey: sealed.ciphertext,
       encryptionIv: sealed.iv,
       encryptionAuthTag: sealed.authTag,
@@ -62,27 +52,13 @@ export const aiCredentialRoutes: FastifyPluginAsync<AiCredentialRouteOptions> = 
     return reply.send(await loadStatus(db, orgId));
   });
 
-  app.delete('/org/ai-providers/:provider', ownerOnly, async (request, reply) => {
-    const params = parseOr400(providerParamsSchema, request.params, reply);
-    if (!params) return;
+  app.delete('/org/ai-providers', ownerOnly, async (request, reply) => {
     const orgId = request.authUser!.org;
-    const removed = await deleteAiProviderCredential(db, orgId, params.provider);
+    const removed = await deleteAiProviderCredential(db, orgId);
     if (!removed) {
       return reply
         .code(404)
-        .send({ error: { code: 'NOT_FOUND', message: 'No key configured for that provider.' } });
-    }
-    // Clear any selection that pointed at the now-deleted key.
-    const settings = await getAiSettings(db, orgId);
-    if (
-      settings.chatProvider === params.provider ||
-      settings.embeddingProvider === params.provider
-    ) {
-      await upsertAiSettings(db, orgId, {
-        chatProvider: settings.chatProvider === params.provider ? null : settings.chatProvider,
-        embeddingProvider:
-          settings.embeddingProvider === params.provider ? null : settings.embeddingProvider,
-      });
+        .send({ error: { code: 'NOT_FOUND', message: 'No OpenRouter key configured.' } });
     }
     return reply.code(204).send();
   });
