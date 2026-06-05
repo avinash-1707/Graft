@@ -11,6 +11,7 @@ const TRIGGER_LABELS: Record<EscalationTrigger, string> = {
   MODEL_INVOKED: "AI asked for a human",
   NEGATIVE_SENTIMENT: "Customer seems frustrated",
   PROVIDER_FAILURE: "AI provider error",
+  INSUFFICIENT_CREDITS: "Out of AI credits",
 };
 
 /**

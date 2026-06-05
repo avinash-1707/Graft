@@ -10,6 +10,10 @@ export * from './enums/auth-code-purpose.js';
 export * from './enums/widget-preset.js';
 export * from './enums/widget-launcher-position.js';
 export * from './enums/transport.js';
+export * from './enums/billing-plan.js';
+export * from './enums/pricing-mode.js';
+export * from './enums/ledger-entry-type.js';
+export * from './enums/subscription-status.js';
 
 export * from './contracts/ids.js';
 export * from './contracts/message.js';
@@ -31,6 +35,8 @@ export * from './contracts/realtime.js';
 export * from './contracts/org-feed.js';
 export * from './contracts/chat.js';
 export * from './contracts/widget-config.js';
+export * from './contracts/billing.js';
+export * from './contracts/credits.js';
 
 export * from './constants.js';
 export * from './validate.js';

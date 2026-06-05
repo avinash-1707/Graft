@@ -9,6 +9,7 @@ import { EscalationService } from '../escalation/service.js';
 import { createEventBus } from '../realtime/event-bus.js';
 import { SERVICE_NAME } from '../telemetry.js';
 import { processAnalysisJob } from './analysis-processor.js';
+import { startBillingScheduler } from './billing-jobs.js';
 
 export interface StartWorkerOptions {
   env: AiServiceEnv;
@@ -40,7 +41,11 @@ export async function startWorker({ env, tracing }: StartWorkerOptions): Promise
 
   const worker = new Worker<AiAnalysisJob, AiAnalysisResult, string>(
     AI_ANALYSIS_QUEUE,
-    (job) => processAnalysisJob({ db, encryptor, escalation }, job),
+    (job) =>
+      processAnalysisJob(
+        { db, encryptor, escalation, platformOpenRouterApiKey: env.PLATFORM_OPENROUTER_API_KEY },
+        job,
+      ),
     { connection, concurrency: env.ANALYSIS_WORKER_CONCURRENCY },
   );
 
@@ -51,6 +56,10 @@ export async function startWorker({ env, tracing }: StartWorkerOptions): Promise
     );
   });
   worker.on('error', (err) => logger.error({ err }, 'worker error'));
+
+  // Billing background jobs (pricing refresh + free-tier monthly grants) share this process.
+  const billingConnection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
+  const billing = await startBillingScheduler({ db, connection: billingConnection, logger });
 
   logger.info({ concurrency: env.ANALYSIS_WORKER_CONCURRENCY }, 'analysis worker started');
 
@@ -69,6 +78,8 @@ export async function startWorker({ env, tracing }: StartWorkerOptions): Promise
     void (async () => {
       try {
         await worker.close();
+        await billing.close();
+        billingConnection.disconnect();
         connection.disconnect();
         await bus.close();
         await closeDb();

@@ -1,9 +1,11 @@
+import { resolveBillingMode } from '@graft/billing';
 import type { Encryptor } from '@graft/crypto';
-import { getAiProviderCredentialSecret, getAiSettings, type Database } from '@graft/db';
+import { getAiSettings, type Database } from '@graft/db';
 import { createEmbedder, DEFAULT_EMBEDDING_MODEL, type Embedder } from '@graft/rag';
-import { decryptApiKey } from './decrypt.js';
+import type { PricingMode } from '@graft/shared';
+import { resolveApiKey, type ResolveOptions } from './chat-model.js';
 
-/** Thrown when the org has no OpenRouter key configured. */
+/** Thrown when no usable AI key is available for the org. */
 export class EmbeddingProviderUnavailableError extends Error {
   constructor(message: string) {
     super(message);
@@ -11,28 +13,34 @@ export class EmbeddingProviderUnavailableError extends Error {
   }
 }
 
+export interface ResolvedEmbedder {
+  embedder: Embedder;
+  modelId: string;
+  /** CREDITS embeddings run on the platform key; BYOK on the org key. */
+  billingMode: PricingMode;
+  markupBps: number;
+}
+
 /**
- * Resolves the tenant's OpenRouter key + chosen embedding model into an
- * {@link Embedder}. The key is decrypted in-memory only here; the model is
- * `ai_settings.embedding_model` or {@link DEFAULT_EMBEDDING_MODEL}. Shared by the
- * ingestion worker (chunk embedding) and ai-service (query embedding) so the
- * resolution lives once.
+ * Resolves an {@link Embedder} and which key backs it (platform under CREDITS, org's own
+ * under BYOK), mirroring {@link resolveChatModel}. Shared by the ingestion worker (chunk
+ * embedding) and ai-service (query embedding). The model is `ai_settings.embedding_model`
+ * or {@link DEFAULT_EMBEDDING_MODEL}.
  */
 export async function resolveEmbedder(
   db: Database,
   encryptor: Encryptor,
   organizationId: string,
-): Promise<Embedder> {
-  const secret = await getAiProviderCredentialSecret(db, organizationId);
-  if (!secret) {
-    throw new EmbeddingProviderUnavailableError(
-      'no OpenRouter API key configured for this organization',
-    );
-  }
-
+  opts: ResolveOptions = {},
+): Promise<ResolvedEmbedder> {
+  const billing = await resolveBillingMode(db, organizationId);
   const { embeddingModel } = await getAiSettings(db, organizationId);
-  return createEmbedder({
-    apiKey: decryptApiKey(encryptor, secret),
-    model: embeddingModel ?? DEFAULT_EMBEDDING_MODEL,
-  });
+  const modelId = embeddingModel ?? DEFAULT_EMBEDDING_MODEL;
+  const apiKey = await resolveApiKey(db, encryptor, organizationId, billing.mode, opts);
+  return {
+    embedder: createEmbedder({ apiKey, model: modelId }),
+    modelId,
+    billingMode: billing.mode,
+    markupBps: billing.markupBps,
+  };
 }

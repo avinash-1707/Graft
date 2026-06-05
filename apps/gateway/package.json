@@ -16,6 +16,7 @@
     "@fastify/cors": "11.2.0",
     "@fastify/rate-limit": "10.3.0",
     "@graft/auth": "workspace:*",
+    "@graft/billing": "workspace:*",
     "@graft/crypto": "workspace:*",
     "@graft/db": "workspace:*",
     "@graft/observability": "workspace:*",

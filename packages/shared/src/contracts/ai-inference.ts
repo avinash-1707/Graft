@@ -24,6 +24,13 @@ export const aiInferenceSchema = z.object({
   retrievedChunksCount: z.int().nonnegative().nullable(),
   escalated: z.boolean(),
   escalationTrigger: escalationTriggerSchema.nullable(),
+  /**
+   * Our real OpenRouter cost for this call, in micro-USD. Null for BYOK turns (we don't
+   * pay), failed/cancelled turns (no tokens billed), or when model pricing is unknown.
+   */
+  costMicroUsd: z.int().nonnegative().nullable(),
+  /** What we debited the org's credit balance: cost × (1 + markup). Null when not metered. */
+  chargedMicroUsd: z.int().nonnegative().nullable(),
   createdAt: z.iso.datetime(),
 });
 export type AiInference = z.infer<typeof aiInferenceSchema>;

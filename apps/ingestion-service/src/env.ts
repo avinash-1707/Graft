@@ -54,6 +54,10 @@ export const ingestionEnvSchema = observabilityEnvSchema.extend({
   }, 'must be a base64-encoded 32-byte key'),
   /** Label identifying the active key; must match a key the gateway sealed with. */
   AI_KEY_ENCRYPTION_KEY_ID: z.string().min(1).default('v1'),
+
+  // --- Platform AI key (credits mode) ---
+  /** Platform OpenRouter key used to embed KB chunks for orgs on the CREDITS pricing mode. */
+  PLATFORM_OPENROUTER_API_KEY: z.string().min(1),
 });
 
 export type IngestionEnv = z.infer<typeof ingestionEnvSchema>;

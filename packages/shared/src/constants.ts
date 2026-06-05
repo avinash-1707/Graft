@@ -26,3 +26,24 @@ export const SSE_EVENT_NAME = 'graft' as const;
 export const EMBED_TOKEN_HEADER = 'x-graft-embed-token' as const;
 /** Header carrying the widget's localStorage session UUID on public widget requests. */
 export const SESSION_HEADER = 'x-graft-session-id' as const;
+
+// --- Billing & credits ----------------------------------------------------------
+/**
+ * Money is stored everywhere as an integer count of micro-USD (1 USD = 1e6 micro-USD)
+ * to avoid float drift. Token prices are stored per **million tokens** (also micro-USD)
+ * so even sub-cent-per-Mtok models keep integer precision.
+ */
+export const MICRO_USD_PER_USD = 1_000_000 as const;
+export const TOKENS_PER_PRICE_UNIT = 1_000_000 as const;
+
+/** Default platform markup over real OpenRouter cost, in basis points (2500 = 25%). */
+export const DEFAULT_MARKUP_BPS = 2500 as const;
+
+/** Below this remaining balance the dashboard surfaces a low-credits banner to the owner. */
+export const LOW_BALANCE_THRESHOLD_MICRO_USD = 500_000 as const; // $0.50
+
+/**
+ * Rough average metered charge per AI turn, used only to render a friendly
+ * "≈ N messages" estimate from a micro-USD balance. Not used for billing.
+ */
+export const ESTIMATED_CHARGE_PER_MESSAGE_MICRO_USD = 6_000 as const; // ~$0.006

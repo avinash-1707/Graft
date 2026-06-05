@@ -17,6 +17,8 @@ export interface AnalysisProcessorDeps {
   db: Database;
   encryptor: Encryptor;
   escalation: EscalationService;
+  /** Platform OpenRouter key for CREDITS orgs (classifier runs on the same key as the answer). */
+  platformOpenRouterApiKey: string;
 }
 
 /**
@@ -44,7 +46,9 @@ export async function processAnalysisJob(
     return { escalated: false, trigger: null };
   }
 
-  const { apiKey, modelId } = await resolveChatModel(deps.db, deps.encryptor, data.organizationId);
+  const { apiKey, modelId } = await resolveChatModel(deps.db, deps.encryptor, data.organizationId, {
+    platformApiKey: deps.platformOpenRouterApiKey,
+  });
   const classification = await classifyTurn({ apiKey, model: modelId, text: data.text });
 
   let trigger: EscalationTrigger | null = null;

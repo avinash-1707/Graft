@@ -74,6 +74,23 @@ export const gatewayEnvSchema = observabilityEnvSchema.extend({
   SMTP_USER: z.string().min(1).optional(),
   SMTP_PASS: z.string().min(1).optional(),
   SMTP_SECURE: boolFromEnv.default(false),
+
+  // --- Billing (Dodo Payments) ---
+  // Optional: when unset, billing checkout/webhook endpoints respond 503 (read-only
+  // credit/summary endpoints still work). Required to take payments.
+  /** Dodo API key (bearer token). */
+  DODO_PAYMENTS_API_KEY: z.string().min(1).optional(),
+  /** Dodo webhook signing secret (Standard Webhooks) for `webhooks.unwrap`. */
+  DODO_PAYMENTS_WEBHOOK_KEY: z.string().min(1).optional(),
+  /** Dodo environment selector. */
+  DODO_ENVIRONMENT: z.enum(['test_mode', 'live_mode']).default('test_mode'),
+  /** Dodo subscription product ids per paid tier. */
+  DODO_PRODUCT_PRO: z.string().min(1).optional(),
+  DODO_PRODUCT_SCALE: z.string().min(1).optional(),
+  /** Dodo one-time product ids per credit top-up pack. */
+  DODO_TOPUP_SMALL: z.string().min(1).optional(),
+  DODO_TOPUP_MEDIUM: z.string().min(1).optional(),
+  DODO_TOPUP_LARGE: z.string().min(1).optional(),
 });
 
 export type GatewayEnv = z.infer<typeof gatewayEnvSchema>;

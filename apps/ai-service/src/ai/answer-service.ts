@@ -7,8 +7,17 @@ import {
   streamAnswer,
   type PromptMessage,
 } from '@graft/ai';
+import { computeCharge, resolveBillingMode } from '@graft/billing';
 import type { Encryptor } from '@graft/crypto';
-import { getEscalationConfig, getWidgetConfig, insertAiInference, type Database } from '@graft/db';
+import {
+  getCreditBalance,
+  getEscalationConfig,
+  getModelPricing,
+  getWidgetConfig,
+  insertAiInference,
+  spendCredits,
+  type Database,
+} from '@graft/db';
 import { resolveChatModel, resolveEmbedder, type ResolvedChatModel } from '@graft/keyring';
 import { retrieveChunks, type RetrievedChunk } from '@graft/rag';
 import {
@@ -66,6 +75,8 @@ export interface AnswerServiceDeps {
   topK: number;
   /** How long to wait for the analysis result before giving up the live emit. */
   analysisWaitTimeoutMs: number;
+  /** Platform OpenRouter key used for orgs on the CREDITS pricing mode. */
+  platformOpenRouterApiKey: string;
 }
 
 /**
@@ -92,6 +103,7 @@ export class AnswerService {
   private readonly bus: EventBus;
   private readonly topK: number;
   private readonly analysisWaitTimeoutMs: number;
+  private readonly platformOpenRouterApiKey: string;
 
   constructor(deps: AnswerServiceDeps) {
     this.db = deps.db;
@@ -102,6 +114,7 @@ export class AnswerService {
     this.bus = deps.bus;
     this.topK = deps.topK;
     this.analysisWaitTimeoutMs = deps.analysisWaitTimeoutMs;
+    this.platformOpenRouterApiKey = deps.platformOpenRouterApiKey;
   }
 
   /** Projects a resolved conversation to the read-only org-feed card shape. */
@@ -224,11 +237,33 @@ export class AnswerService {
     const startedAt = Date.now();
     const cfg = (await getEscalationConfig(this.db, organizationId)) ?? DEFAULT_ESCALATION_CONFIG;
 
+    // --- Credits gate. A CREDITS org with an empty balance hands off to a human instead
+    // of spending platform AI budget (embedding + chat both run on the platform key).
+    // Checked BEFORE any provider call. BYOK orgs pay their own provider, so never gated.
+    const billing = await resolveBillingMode(this.db, organizationId);
+    if (billing.mode === 'CREDITS') {
+      const { balanceMicroUsd } = await getCreditBalance(this.db, organizationId);
+      if (balanceMicroUsd <= 0) {
+        log.info(
+          { organizationId, conversationId: conversation.id },
+          'insufficient credits; escalating to human',
+        );
+        await this.escalation.escalate({
+          organizationId,
+          conversationId: conversation.id,
+          trigger: EscalationTrigger.INSUFFICIENT_CREDITS,
+        });
+        return;
+      }
+    }
+
     // --- Retrieve (embed query → tenant-scoped ANN). Embedding/retrieval provider
     // failure → PROVIDER_FAILURE auto-escalation (no chat inference happened). ---
     let chunks: RetrievedChunk[];
     try {
-      const embedder = await resolveEmbedder(this.db, this.encryptor, organizationId);
+      const { embedder } = await resolveEmbedder(this.db, this.encryptor, organizationId, {
+        platformApiKey: this.platformOpenRouterApiKey,
+      });
       const queryEmbedding = await embedder.embedQuery(content);
       chunks = await retrieveChunks(this.db, { organizationId, queryEmbedding, topK: this.topK });
     } catch (err) {
@@ -268,7 +303,9 @@ export class AnswerService {
 
     let resolved: ResolvedChatModel;
     try {
-      resolved = await resolveChatModel(this.db, this.encryptor, organizationId);
+      resolved = await resolveChatModel(this.db, this.encryptor, organizationId, {
+        platformApiKey: this.platformOpenRouterApiKey,
+      });
     } catch (err) {
       log.error(
         { err, organizationId, conversationId: conversation.id },
@@ -422,6 +459,14 @@ export class AnswerService {
     escalated: boolean;
     escalationTrigger: EscalationTriggerType | null;
   }): Promise<void> {
+    const inferenceId = randomUUID();
+
+    // Meter only successful CREDITS turns with real token counts. The cost/charge are
+    // recorded on the row; the charge is then debited from the org's balance, keyed on
+    // the inference id so a retry never double-debits. BYOK turns and failures cost
+    // nothing. (Pricing absent for the model → record null cost, skip the debit.)
+    const meter = await this.computeUsageCharge(args);
+
     const record = aiInferenceInsertSchema.parse({
       organizationId: args.organizationId,
       conversationId: args.conversationId,
@@ -438,7 +483,47 @@ export class AnswerService {
       retrievedChunksCount: args.chunkCount,
       escalated: args.escalated,
       escalationTrigger: args.escalationTrigger,
+      costMicroUsd: meter?.costMicroUsd ?? null,
+      chargedMicroUsd: meter?.chargeMicroUsd ?? null,
     });
-    await insertAiInference(this.db, record);
+    await insertAiInference(this.db, record, inferenceId);
+
+    if (meter && meter.chargeMicroUsd > 0) {
+      await spendCredits(this.db, {
+        organizationId: args.organizationId,
+        amountMicroUsd: meter.chargeMicroUsd,
+        sourceRef: inferenceId,
+        description: 'AI usage',
+        idempotencyKey: `usage:${inferenceId}`,
+      });
+    }
+  }
+
+  /**
+   * Returns the real cost + marked-up charge for a metered turn, or null when the turn is
+   * not billable (BYOK, non-success, no tokens, or unknown model pricing).
+   */
+  private async computeUsageCharge(args: {
+    organizationId: string;
+    resolved: ResolvedChatModel;
+    status: AiInferenceStatus;
+    promptTokens: number | null;
+    completionTokens: number | null;
+  }): Promise<{ costMicroUsd: number; chargeMicroUsd: number } | null> {
+    if (
+      args.resolved.billingMode !== 'CREDITS' ||
+      args.status !== 'SUCCESS' ||
+      args.promptTokens === null ||
+      args.completionTokens === null
+    ) {
+      return null;
+    }
+    const pricing = await getModelPricing(this.db, args.resolved.modelId);
+    if (!pricing) return null;
+    return computeCharge(
+      { promptTokens: args.promptTokens, completionTokens: args.completionTokens },
+      pricing,
+      args.resolved.markupBps,
+    );
   }
 }

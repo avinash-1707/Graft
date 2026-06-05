@@ -8,4 +8,7 @@ export const queryKeys = {
   agents: ["agents"] as const,
   kbDocuments: ["kb", "documents"] as const,
   notes: (conversationId: string) => ["notes", conversationId] as const,
+  billingSummary: ["billing", "summary"] as const,
+  billingPlans: ["billing", "plans"] as const,
+  billingLedger: ["billing", "ledger"] as const,
 };

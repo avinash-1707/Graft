@@ -42,6 +42,13 @@ export const aiServiceEnvSchema = observabilityEnvSchema.extend({
   }, 'must be a base64-encoded 32-byte key'),
   /** Label identifying the active key; must match a key the gateway sealed with. */
   AI_KEY_ENCRYPTION_KEY_ID: z.string().min(1).default('v1'),
+
+  // --- Platform AI key (credits mode) ---
+  /**
+   * The platform's own OpenRouter key. Orgs on the CREDITS pricing mode run all AI on
+   * this key; their usage is metered and debited from prepaid credits. BYOK orgs ignore it.
+   */
+  PLATFORM_OPENROUTER_API_KEY: z.string().min(1),
 });
 
 export type AiServiceEnv = z.infer<typeof aiServiceEnvSchema>;

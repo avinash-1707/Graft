@@ -11,6 +11,7 @@ import {
   createOrganization,
   deleteAgentForOrg,
   deleteOrganization,
+  ensureOrgSubscription,
   findUserByEmail,
   listAgentsByOrg,
   markEmailVerified,
@@ -77,6 +78,8 @@ export class AuthService {
       name: input.organizationName,
       embedToken: generateEmbedToken(),
     });
+    // Every org starts on the free STARTER/CREDITS tier with a zeroed balance.
+    await ensureOrgSubscription(this.deps.db, org.id);
 
     try {
       await userCreateContext.run({ organizationId: org.id, role: 'OWNER' }, async () => {

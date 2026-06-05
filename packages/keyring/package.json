@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@graft/ai": "workspace:*",
+    "@graft/billing": "workspace:*",
     "@graft/crypto": "workspace:*",
     "@graft/db": "workspace:*",
     "@graft/rag": "workspace:*",

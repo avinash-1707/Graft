@@ -47,6 +47,7 @@ export async function start({ env, tracing }: StartOptions): Promise<void> {
     bus,
     topK: env.RETRIEVAL_TOP_K,
     analysisWaitTimeoutMs: env.ANALYSIS_WAIT_TIMEOUT_MS,
+    platformOpenRouterApiKey: env.PLATFORM_OPENROUTER_API_KEY,
   });
   const verifier = createJwtVerifier({
     jwksUrl: env.AUTH_JWKS_URL,

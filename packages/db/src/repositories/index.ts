@@ -12,3 +12,7 @@ export * from './kb-documents.js';
 export * from './conversations.js';
 export * from './messages.js';
 export * from './internal-notes.js';
+export * from './billing-plans.js';
+export * from './org-subscription.js';
+export * from './credit-balance.js';
+export * from './ai-model-pricing.js';

@@ -6,6 +6,8 @@ export const escalationTriggerSchema = z.enum([
   'MODEL_INVOKED',
   'NEGATIVE_SENTIMENT',
   'PROVIDER_FAILURE',
+  /** Credits org ran out of prepaid balance: hand off to a human instead of spending. */
+  'INSUFFICIENT_CREDITS',
 ]);
 
 export type EscalationTrigger = z.infer<typeof escalationTriggerSchema>;

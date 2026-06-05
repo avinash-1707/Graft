@@ -31,7 +31,13 @@ export async function startWorker({ env, tracing }: StartWorkerOptions): Promise
   });
   const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
 
-  const processor = createProcessor({ db, storage, encryptor, logger });
+  const processor = createProcessor({
+    db,
+    storage,
+    encryptor,
+    logger,
+    platformOpenRouterApiKey: env.PLATFORM_OPENROUTER_API_KEY,
+  });
   const worker = new Worker<KbIngestionJob, void, string>(KB_INGESTION_QUEUE, processor, {
     connection,
   });

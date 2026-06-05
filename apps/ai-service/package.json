@@ -21,6 +21,7 @@
   "dependencies": {
     "@graft/ai": "workspace:*",
     "@graft/auth": "workspace:*",
+    "@graft/billing": "workspace:*",
     "@graft/crypto": "workspace:*",
     "@graft/db": "workspace:*",
     "@graft/keyring": "workspace:*",

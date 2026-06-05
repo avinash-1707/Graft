@@ -41,6 +41,9 @@ importers:
       '@graft/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@graft/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@graft/crypto':
         specifier: workspace:*
         version: link:../../packages/crypto
@@ -230,6 +233,9 @@ importers:
       '@graft/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@graft/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@graft/crypto':
         specifier: workspace:*
         version: link:../../packages/crypto
@@ -544,6 +550,28 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/billing:
+    dependencies:
+      '@graft/db':
+        specifier: workspace:*
+        version: link:../db
+      '@graft/shared':
+        specifier: workspace:*
+        version: link:../shared
+      dodopayments:
+        specifier: 2.35.0
+        version: 2.35.0
+    devDependencies:
+      '@graft/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@graft/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/crypto:
     devDependencies:
       '@graft/eslint-config':
@@ -601,6 +629,9 @@ importers:
       '@graft/ai':
         specifier: workspace:*
         version: link:../ai
+      '@graft/billing':
+        specifier: workspace:*
+        version: link:../billing
       '@graft/crypto':
         specifier: workspace:*
         version: link:../crypto
@@ -2442,6 +2473,9 @@ packages:
     peerDependencies:
       socket.io-adapter: ^2.5.4
 
+  '@stablelib/base64@1.0.1':
+    resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
+
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
@@ -3129,6 +3163,10 @@ packages:
   dingbat-to-unicode@1.0.1:
     resolution: {integrity: sha512-98l0sW87ZT58pU4i61wa2OHwxbiYSbuxsCBozaVnYX2iCnr3bLM3fIes1/ej7h1YdOKuKt/MLs706TVnALA65w==}
 
+  dodopayments@2.35.0:
+    resolution: {integrity: sha512-dIt0izUTIiXtHvqEqHdt7HF1yJenxFnx1pGyHXUoiU8b30bZ38cJfIoe4Or39zjCeyvcxSgxbaw+5eu/F0eKWQ==}
+    hasBin: true
+
   dotenv@17.4.2:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
@@ -3424,6 +3462,9 @@ packages:
 
   fast-querystring@1.1.2:
     resolution: {integrity: sha512-g6KuKWmFXc0fID8WWH0jit4g0AGBoJhCkJMb1RmbsSEUNvQ+ZC8D6CUZ+GtF8nMzSPXnhiePyyqqipzNNEnHjg==}
+
+  fast-sha256@1.3.0:
+    resolution: {integrity: sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==}
 
   fast-string-truncated-width@3.0.3:
     resolution: {integrity: sha512-0jjjIEL6+0jag3l2XWWizO64/aZVtpiGE3t0Zgqxv0DPuxiMjvB3M24fCyhZUO4KomJQPj3LTSUnDP3GpdwC0g==}
@@ -4580,6 +4621,9 @@ packages:
 
   standard-as-callback@2.1.0:
     resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
+
+  standardwebhooks@1.0.0:
+    resolution: {integrity: sha512-BbHGOQK9olHPMvQNHWul6MYlrRTAOKn03rOe4A8O3CLWhNf4YHBqq2HJKKC+sfqpxiBY52pNeesD6jIiLDz8jg==}
 
   statuses@2.0.2:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
@@ -6584,6 +6628,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@stablelib/base64@1.0.1': {}
+
   '@standard-schema/spec@1.1.0': {}
 
   '@swc/helpers@0.5.15':
@@ -7162,6 +7208,10 @@ snapshots:
 
   dingbat-to-unicode@1.0.1: {}
 
+  dodopayments@2.35.0:
+    dependencies:
+      standardwebhooks: 1.0.0
+
   dotenv@17.4.2: {}
 
   drizzle-kit@0.31.10:
@@ -7522,6 +7572,8 @@ snapshots:
   fast-querystring@1.1.2:
     dependencies:
       fast-decode-uri-component: 1.0.1
+
+  fast-sha256@1.3.0: {}
 
   fast-string-truncated-width@3.0.3: {}
 
@@ -8723,6 +8775,11 @@ snapshots:
   sprintf-js@1.0.3: {}
 
   standard-as-callback@2.1.0: {}
+
+  standardwebhooks@1.0.0:
+    dependencies:
+      '@stablelib/base64': 1.0.1
+      fast-sha256: 1.3.0
 
   statuses@2.0.2: {}
 

@@ -27,6 +27,10 @@ export const aiInferences = pgTable(
     retrievedChunksCount: integer('retrieved_chunks_count'),
     escalated: boolean('escalated').notNull().default(false),
     escalationTrigger: escalationTriggerPgEnum('escalation_trigger'),
+    /** Real OpenRouter cost in micro-USD; null for BYOK/failed/unknown-pricing turns. */
+    costMicroUsd: integer('cost_micro_usd'),
+    /** Amount debited from the org's credit balance (cost × markup); null when unmetered. */
+    chargedMicroUsd: integer('charged_micro_usd'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

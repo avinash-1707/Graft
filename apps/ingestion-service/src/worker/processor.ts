@@ -19,6 +19,8 @@ export interface ProcessorDeps {
   storage: Storage;
   encryptor: Encryptor;
   logger: Logger;
+  /** Platform OpenRouter key for embedding KB chunks of CREDITS-mode orgs. */
+  platformOpenRouterApiKey: string;
 }
 
 /**
@@ -48,7 +50,9 @@ export function createProcessor(deps: ProcessorDeps) {
     const chunks = chunkText(text);
     if (chunks.length === 0) throw new Error('document produced no text to index');
 
-    const embedder = await resolveEmbedder(deps.db, deps.encryptor, organizationId);
+    const { embedder } = await resolveEmbedder(deps.db, deps.encryptor, organizationId, {
+      platformApiKey: deps.platformOpenRouterApiKey,
+    });
     const embeddings = await embedder.embedBatch(chunks.map((c) => c.content));
     if (embeddings.length !== chunks.length) {
       throw new Error(
